@@ -1,0 +1,44 @@
+nextflows:
+  - name: "clockwork_vc"
+    show: yes
+    directory: "/datadisks/disk1/nfs/projects/clockwork-nextgen"
+    description: "Martin Hunt's clockwork pipeline - variant call."
+    version: "1.2"
+    input:
+      - description: "A single pair of fastq.gz files"
+        type: file
+        argc: 2
+        argf: "--reads_in1 {0} --reads_in2 {1}"
+
+  - name: "nxtest"
+    show: yes
+    directory: "/datadisks/disk1/nfs/projects/nxtest"
+    description: "Test example flow from nextflow.io"
+    version: "0.5"
+    input:
+      - description: "A single fasta file"
+        type: file
+        argc: 1
+        argf: "--in_fasta {0}"
+
+  - name: "COMPASS"
+    show: yes
+    directory: "/datadisks/disk1/nfs/projects/nxtest"
+    description: "The COMPASS pipeline in the cloud. This doesn't actually work right now"
+    version: "3.14"
+    input:
+      - description: "Not imlemented"
+        type: "notimplemented"
+        argc: 0
+        argf: ""
+
+users:
+  - name: "someuser"
+    password: "hunter1"
+    role: "user"
+    capabilities: [ "list_flows", "run_flows" ]
+    allowed_flows: "nxflow"
+
+  - name: "denis"
+    password: "javasucks"
+    role: "admin"

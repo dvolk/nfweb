@@ -1,0 +1,46 @@
+{% extends "base1.template" %}
+{% block content %}
+<h2>{{ uuid }}</h2>
+<div class="container">
+  {% if buttons['log'] %}<a href="/flow/{{ flow_name }}/log/{{ uuid }}"><button type="button" class="btn btn-info">View log</button></a>{% endif %}
+  {% if buttons['report'] %}<a href="/flow/{{ flow_name }}/report/{{ uuid }}"><button type="button" class="btn btn-primary">View report</button></a>{% endif %}
+  {% if buttons['timeline'] %}<a href="/flow/{{ flow_name }}/timeline/{{ uuid }}"><button type="button" class="btn btn-primary">View timeline</button></a>{% endif %}
+  {% if buttons['dagdot'] %}<a href="/flow/{{ flow_name }}/dagdot/{{ uuid }}"><button type="button" class="btn btn-primary">View DAG</button></a>{% endif %}
+  {% if buttons['stop'] %}<a href="/flow/{{ flow_name }}/stop/{{ uuid }}"><button type="button" class="btn btn-danger">Stop</button></a>{% endif %}
+  {% if buttons['rerun'] %}<a href="/flow/{{ flow_name }}/restart/{{ uuid }}"><button type="button" class="btn btn-warning">Restart</button></a>{% endif %}
+  {% if buttons['delete'] %}<a href="/flow/{{ flow_name }}/delete/{{ uuid }}"><button type="button" class="btn btn-danger">Delete</button></a>{% endif %}
+</div>
+<br/>
+<table class="table table-hover table-sm">
+  <thead>
+    <tr>
+      <th scope="col">Task ID</th>
+      <th scope="col">Name</th>
+      <th scope="col">Status</th>
+      <th scope="col">Exit code</th>
+      <th scope="col">Realtime</th>
+      <!--	    <th scope="col">Submitted<th>
+		    <th scope="col">Hash</th>
+      <th scope="col">cpu</th>
+      <th scope="col">rss</th>
+      -->
+    </tr>
+  </thead> 
+  <tbody>
+    {% for entry in entries %}
+    <tr>
+      <th scope="row">{{ entry['task_id'] }}</th>
+      <td>{{ entry['name'] }}</td>
+      <td>{{ entry['status'] }}</td>
+      <td>{{ entry['exit'] }}</td>
+      <td>{{ entry['duration'] }}</td>
+      <!--	    <td>{{ entry['submit'] }}</td>
+		    <td>{{ entry['hash'] }}</td>
+      <td>{{ entry['%cpu'] }}</td>
+      <td>{{ entry['rss'] }}</td>
+      -->
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock content %}

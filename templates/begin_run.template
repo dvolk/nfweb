@@ -1,0 +1,19 @@
+{% extends "base1.template" %}
+{% block content %}
+
+<h5>Create new run for {{ flow['name'] }}</h5>
+<p>Input description: {{ incfg['description'] }}</p>
+
+{% if incfg['type'] == 'file' %}
+{% for n in range(incfg['argc']) %}
+
+<div class="input-group mb-3">
+  <input type="text" class="form-control" placeholder="File {{ n+1 }}" aria-label="File {{ n+1 }}">
+</div>
+
+{% endfor %}
+{% endif %}
+
+<button type="button" class="btn btn-primary">Submit</button>
+
+{% endblock content %}
