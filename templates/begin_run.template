@@ -7,13 +7,15 @@
 {% if incfg['type'] == 'file' %}
 {% for n in range(incfg['argc']) %}
 
-<div class="input-group mb-3">
-  <input type="text" class="form-control" placeholder="File {{ n+1 }}" aria-label="File {{ n+1 }}">
-</div>
+<form action='/flow/{{ flow['name'] }}/new' method='POST'>
+  <div class="input-group mb-3">
+    <input name="file{{ n+1 }}" type="text" class="form-control" placeholder="File {{ n+1 }}" aria-label="File {{ n+1 }}">
+  </div>
 
-{% endfor %}
-{% endif %}
+  {% endfor %}
+  {% endif %}
 
-<button type="button" class="btn btn-primary">Submit</button>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
 
 {% endblock content %}

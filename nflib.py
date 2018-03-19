@@ -10,8 +10,11 @@ HistoryEntry = namedtuple('HistoryEntry', ['date_time', 'duration', 'code_name',
 
 def parseHistoryFile(nf_history_fp: pathlib.Path) -> typing.List[HistoryEntry]:
     history_nt = list()
+    if not nf_history_fp.is_file():
+        print("history file {} does not exist".format(nf_history_fp))
+        return []
 
-    with open(nf_history_fp) as history_file:
+    with open(str(nf_history_fp)) as history_file:
         history_tsv = csv.reader(history_file, delimiter='\t')
         for row in history_tsv:
             history_nt.append(HistoryEntry(*row))
@@ -23,8 +26,11 @@ TraceEntry = typing.Dict[str, str]
 
 def parseTraceFile(nf_trace_fp: pathlib.Path) -> typing.List[TraceEntry]:
     traces = list()
+    if not nf_trace_fp.is_file():
+        print("trace file {} does not exist".format(nf_trace_fp))
+        return []
 
-    with open(nf_trace_fp) as trace_file:
+    with open(str(nf_trace_fp)) as trace_file:
         reader = csv.DictReader(trace_file, delimiter='\t')
         for row in reader:
             traces.append(row)
