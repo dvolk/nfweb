@@ -2,8 +2,13 @@ nextflows:
   - name: "clockwork_vc"
     show: yes
     directory: "/datadisks/disk1/nfs/projects/clockwork-nextgen"
-    description: "Martin Hunt's clockwork pipeline - variant call."
+    description: "Martin Hunt's clockwork pipeline - variant call. Runs locally."
     version: "1.2"
+    contexts:
+      - name: Local
+        script: "/datadisks/disk1/cifs/code/clockwork-nextgen/go.sh"
+      - name: Azure
+        script: "/datadisks/disk1/cifs/code/clockwork-nextgen/go-azure.sh"
     input:
       description: "A single pair of fastq.gz files"
       type: file
@@ -16,24 +21,15 @@ nextflows:
     directory: "/datadisks/disk1/nfs/projects/nxtest"
     description: "Test example flow from nextflow.io"
     version: "0.5"
+    contexts:
+      - name: Local
+        script: "/datadisks/disk1/cifs/code/nxtest/go.sh"
     input:
       description: "A single fasta file"
       type: file
       argc: 1
       argf: "--in_fasta {0}"
-      script: "/datadisks/disk1/cifs/code/nxtest/go.sh"
-
-  - name: "COMPASS"
-    show: yes
-    directory: "/datadisks/disk1/nfs/projects/fake_compass"
-    description: "The COMPASS pipeline in the cloud. This doesn't actually work right now"
-    version: "3.14"
-    input:
-      description: "Not imlemented"
-      type: "notimplemented"
-      argc: 0
-      argf: ""
-      script: ""
+      script: "/home/oxfordfun/nxtest/go.sh"
 
 users:
   - name: "someuser"

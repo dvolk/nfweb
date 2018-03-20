@@ -1,6 +1,7 @@
 import subprocess
 import pathlib
 import typing
+import shlex
 
 import os
 import signal
@@ -18,6 +19,7 @@ cfg.load("config.yaml")
 flows = {}
 for x in cfg.get('nextflows'):
     flows[x['name']] = x
+    
 
 # source: https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
 def chunks(l, n):
@@ -39,14 +41,25 @@ def begin_run(flow_name: str):
     elif request.method == 'POST':
         flow_cfg = flows[flow_name]
         flow_input_cfg = flow_cfg['input']
-        vs = []
-        for v in request.form.values():
-            vs.append(v)
-        cmd_line = flow_input_cfg['script']
-        input_str = flow_input_cfg['argf'].format(*vs)
-        print(cmd_line, input_str)
+        context = request.form['context']
+        vs = list()
+        print(flow_input_cfg['type'])
+        if flow_input_cfg['type'] == 'file':
+            for k,v in request.form.items():
+                if k[0:4] == "file":
+                    vs.append(v)
 
-        os.system("nohup bash {0} {1} &".format(cmd_line, input_str))
+        cmd_line = None
+        for c in flow_cfg['contexts']:
+            print(c)
+            if c['name'] == context:
+                cmd_line = c['script']
+                break
+        input_str = flow_input_cfg['argf'].format(*vs)
+
+        cmd = "nohup bash {0} {1} &".format(shlex.quote(cmd_line), shlex.quote(input_str))
+        print(cmd)
+        os.system(cmd)
         return redirect("/flow/{0}".format(flow_name))
 
 @app.route('/list_all')
