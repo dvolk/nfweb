@@ -8,7 +8,14 @@
       <h5 class="mb-1">{{ flow['name'] }}</h5>
       <small>{{ flow['version'] }}</small>
     </div>
-      <p class="mb-1">{{ flow['description'] }}</p>
+      <div class="d-flex w-100 justify-content-between">
+	<p class="mb-1">{{ flow['description'] }}</p>
+	<p class="mb-1">
+	  {% for context in flow['contexts'] %}
+	  <span style="border-radius: 5px; padding: 3px; background-color: #cac">{{ context['name'] }}</span>
+	  {% endfor %}
+	</p>
+      </div>
   </a>
   {% endif %}
   {% endfor %}

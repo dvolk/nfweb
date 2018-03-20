@@ -1,26 +1,57 @@
 nextflows:
-  - name: "clockwork_vc"
+  - name: "clockwork-remove_contam"
     show: yes
-    directory: "/datadisks/disk1/nfs/projects/clockwork-nextgen"
-    description: "Martin Hunt's clockwork pipeline - variant call. Runs locally."
-    version: "1.2"
+    directory: "/datadisks/disk1/nfs/projects/clockwork-nextgen-remove_contam"
+    description: "Martin Hunt's clockwork pipeline - Remove contamination."
+    version: "0.4.0"
     contexts:
       - name: Local
-        script: "/datadisks/disk1/cifs/code/clockwork-nextgen/go.sh"
+        script: "/datadisks/disk1/cifs/code/clockwork-nextgen/go-remove_contam-local.sh"
       - name: Azure
-        script: "/datadisks/disk1/cifs/code/clockwork-nextgen/go-azure.sh"
+        script: "/datadisks/disk1/cifs/code/clockwork-nextgen/go-remove_contam-azure.sh"
     input:
       description: "A single pair of fastq.gz files"
       type: file
       argc: 2
       argf: "--reads_in1 {0} --reads_in2 {1}"
-      script: "/datadisks/disk1/cifs/code/clockwork-nextgen/go.sh"
+
+  - name: "clockwork-qc"
+    show: yes
+    directory: "/datadisks/disk1/nfs/projects/clockwork-nextgen-qc"
+    description: "Martin Hunt's clockwork pipeline - Quality control."
+    version: "0.4.0"
+    contexts:
+      - name: Local
+        script: "/datadisks/disk1/cifs/code/clockwork-nextgen/go-qc-local.sh"
+      - name: Azure
+        script: "/datadisks/disk1/cifs/code/clockwork-nextgen/go-qc-azure.sh"
+    input:
+      description: "A single pair of fastq.gz files"
+      type: file
+      argc: 2
+      argf: "--reads_in1 {0} --reads_in2 {1}"
+
+  - name: "clockwork-variant_call"
+    show: yes
+    directory: "/datadisks/disk1/nfs/projects/clockwork-nextgen-variant_call"
+    description: "Martin Hunt's clockwork pipeline - Variant call."
+    version: "0.4.0"
+    contexts:
+      - name: Local
+        script: "/datadisks/disk1/cifs/code/clockwork-nextgen/go-variant_call-local.sh"
+      - name: Azure
+        script: "/datadisks/disk1/cifs/code/clockwork-nextgen/go-variant_call-azure.sh"
+    input:
+      description: "A single pair of fastq.gz files"
+      type: file
+      argc: 2
+      argf: "--reads_in1 {0} --reads_in2 {1}"
 
   - name: "nxtest"
     show: yes
     directory: "/datadisks/disk1/nfs/projects/nxtest"
     description: "Test example flow from nextflow.io"
-    version: "0.5"
+    version: "1.0"
     contexts:
       - name: Local
         script: "/datadisks/disk1/cifs/code/nxtest/go.sh"
@@ -29,7 +60,6 @@ nextflows:
       type: file
       argc: 1
       argf: "--in_fasta {0}"
-      script: "/home/oxfordfun/nxtest/go.sh"
 
 users:
   - name: "someuser"
