@@ -13,19 +13,63 @@ import config
 
 app = Flask(__name__)
 
-cfg = config.Config()
-cfg.load("config.yaml")
+cfg = None
+flows = None
 
-flows = {}
-for x in cfg.get('nextflows'):
-    flows[x['name']] = x
-    
+def reload_cfg():
+    global cfg
+    cfg = config.Config()
+    cfg.load("config.yaml")
+    global flows
+    flows = dict()
+    for x in cfg.get('nextflows'):
+        flows[x['name']] = x
 
-# source: https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
-def chunks(l, n):
-    """Yield successive n-sized chunks from l."""
-    for i in range(0, len(l), n):
-        yield l[i:i + n]
+reload_cfg()
+
+# todo move this and similar to nflib.py
+@app.route('/status')
+def status():
+    running = list()
+    for _,flow in flows.items():
+        nf_directory = pathlib.Path(flow['directory'])
+        table = nflib.parseHistoryFile(nf_directory / 'history')
+        for run in table:
+            if run.status == "-":
+                running.append([flow, run])
+    print(running)
+    return render_template('status.template', running=running)
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    if request.method == 'GET':
+        return render_template('admin.template', config_yaml=open("config.yaml").read())
+    if request.method == 'POST':
+        if request.form['config']:
+            old_cfg = cfg.config
+            new_cfg = request.form['config']
+            try:
+                cfg2 = config.Config()
+                cfg2.load_str(new_cfg)
+            except:
+                print("invalid config string")
+                return redirect("/admin")
+            try:
+                f = open("config.yaml", "w")
+                f.write(new_cfg)
+            except:
+                print("Couldn't write config.yaml file")
+                return redirect("/admin")
+            finally:
+                f.close()
+            try:
+                reload_cfg()
+            except:
+                print("couldn't reload config")
+                cfg.config = old_cfg
+                return redirect("/admin")
+
+        return redirect("/admin")
 
 @app.route('/')
 def list_flows():
