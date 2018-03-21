@@ -1,0 +1,18 @@
+{% extends 'base1.template' %}
+
+{% block content %}
+<table class="table table-hover table-sm">
+<thead>
+<th>Key</th>
+<th>Value</th>
+</thead>
+<tbody>
+{% for k,v in userinfo.items() %}
+<tr>
+  <td>{{ k }}</td>
+  <td>{{ v }}</td>
+  </tr>
+{% endfor %}
+  </tbody>
+  </table>
+{% endblock %}

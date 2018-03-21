@@ -1,0 +1,36 @@
+{% extends "base1.template" %}
+{% block content %}
+<h2>Running</h2>
+<table class="table table-hover table-sm">
+  <thead>
+    <tr>
+      <th scope="col">Started On</th>
+      <th scope="col">Flow</th>
+      <th scope="col">User</th>
+      <th scope="col">Status</th>
+      <th scope="col">Action</th>
+    </tr>
+  </thead> 
+  <tbody>
+    {% for lst in running %}
+    {% set flow = lst[0] %}
+    {% set entry = lst[1] %}
+    <tr>
+      <td scope="row">{{ entry.date_time }}</td>
+      <td>{{ flow.name }}</td>
+      <td>denisv@ndm.local</td>
+      <td>
+	<span href="#" style="padding: 3px; background-color: {% if entry[3] == "ERR" %}#FF6347{% elif entry[3] == "OK" %}#F0F8FF{% else %}#00BFFF{% endif %}">
+	  {% if entry[3] == "-" %}
+	  RUNNING
+	  {% else %}
+	  {{ entry[3] }}
+	  {% endif %}
+	  <span>
+      </td>
+      <td><a href="/flow/{{ flow.name}}/details/{{ entry.uuid }}">Details</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock content %}

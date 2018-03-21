@@ -1,0 +1,9 @@
+{% extends "base1.template" %}
+{% block content %}
+
+<form method="POST" action="/admin">
+  <button style="margin: 10px" type="submit" type="button" class="btn btn-primary">Save</button>
+  <textarea rows=20 class="form-control" name="config">{{ config_yaml }}</textarea>
+</form>
+
+{% endblock content %}

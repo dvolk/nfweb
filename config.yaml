@@ -62,12 +62,10 @@ nextflows:
       argf: "--in_fasta {0}"
 
 users:
-  - name: "someuser"
-    password: "hunter1"
-    role: "user"
-    capabilities: [ "list_flows", "run_flows" ]
-    allowed_flows: "nxflow"
+  - name: "compass"
+    password: "compass"
+    capabilities: ["view_flows"]
 
-  - name: "denis"
+  - name: "denis.volk@ndm.ox.ac.uk"
     password: "javasucks"
-    role: "admin"
+    capabilities: ["view_flows", "run_flows", "admin"]
