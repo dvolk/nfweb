@@ -1,17 +1,20 @@
 {% extends "base1.template" %}
 {% block content %}
-{% for datum in data %}
-{% set table = datum['table'] %}
 <div style="padding-bottom: 10px" class="container">
-  <h2>{{ datum['flow_name'] }}</h2>
-  <a href="/flow/{{ datum['flow_name'] }}/new"><button type="button" class="btn btn-primary">New run</button></a>
+  <h2>{{ stuff['flow_name'] }}</h2>
+  <a href="/flow/{{ stuff['flow_name'] }}/new"><button type="button" class="btn btn-primary">New run</button></a>
 </div>
+
+<!--
+CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command_line, user, sample_group, workflow, context, run_uuid primary key not null, start_epochtime, pid, ppid, end_epochtime);
+-->
 
 <table class="table table-hover table-sm">
   <thead>
     <tr>
       <th scope="col">Started On</th>
       <th scope="col">Plate</th>
+      <th scope="col">Context</th>
       <th scope="col">User</th>
       <th scope="col">Duration</th>
       <th scope="col">Status</th>
@@ -19,11 +22,12 @@
     </tr>
   </thead> 
   <tbody>
-    {% for entry in table %}
+    {% for entry in data %}
     <tr>
-      <th scope="row">{{ entry.date_time }}</th>
-      <td>{{ entry[2] }}</td>
-      <td>denisv@ndm.local</td>
+      <th scope="row">{{ entry[0] }}</th>
+      <td>{{ entry[8] }}</td>
+      <td>{{ entry[10] }}</td>
+      <td>{{ entry[7] }}</td>
       <td>{{ entry[1] }}</td>
       <td>
 	<span href="#" style="padding: 3px; background-color: {% if entry[3] == "ERR" %}#FF6347{% elif entry[3] == "OK" %}#F0F8FF{% else %}#00BFFF{% endif %}">
@@ -34,10 +38,10 @@
 	  {% endif %}
 	  <span>
       </td>
-      <td><a href="/flow/{{ datum['flow_name'] }}/details/{{ entry[5] }}">Details</td>
+      
+      <td><a href="/flow/{{ stuff['flow_name'] }}/details/{{ entry[5] }}">Details</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
-{% endfor %}
 {% endblock content %}

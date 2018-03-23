@@ -17,7 +17,8 @@ def parseHistoryFile(nf_history_fp: pathlib.Path) -> typing.List[HistoryEntry]:
     with open(str(nf_history_fp)) as history_file:
         history_tsv = csv.reader(history_file, delimiter='\t')
         for row in history_tsv:
-            history_nt.append(HistoryEntry(*row))
+            if len(row) == 7:
+                history_nt.append(HistoryEntry(*row))
 
     return history_nt
 

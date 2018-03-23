@@ -1,10 +1,12 @@
+import json
 import subprocess
 import pathlib
 import typing
 import shlex
-
+import uuid
 import os
 import signal
+import sqlite3
 
 from flask import Flask, request, render_template, redirect, abort, url_for
 import flask_login
@@ -17,6 +19,8 @@ app.secret_key = 'secret key'
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = '/login'
+
+con = sqlite3.connect('nfweb.sqlite')
 
 class User(flask_login.UserMixin):
     pass
@@ -77,15 +81,12 @@ def logout():
 @app.route('/')
 @flask_login.login_required
 def status():
-    running = list()
-    for _,flow in flows.items():
-        nf_directory = pathlib.Path(flow['directory'])
-        table = nflib.parseHistoryFile(nf_directory / 'history')
-        for run in table:
-            if run.status == "-":
-                running.append([flow, run])
+    running = con.execute('select * from nfruns where status = "-" order by "start_epochtime" desc').fetchall()
+    recent = con.execute('select * from nfruns where status = "OK" order by "start_epochtime" desc limit 5').fetchall()
+    failed = con.execute('select * from nfruns where status = "ERR" order by "start_epochtime" desc limit 5').fetchall()
+
     print(running)
-    return render_template('status.template', running=running)
+    return render_template('status.template', running=running, recent=recent, failed=failed)
 
 @app.route('/userinfo/<username>')
 @flask_login.login_required
@@ -94,9 +95,9 @@ def userinfo(username: str):
     is_same = username == flask_login.current_user.id
     username_exists = username in users
 
-#    if not is_admin or not is_same or not username_exists:
-#        return redirect('/')
-#    else:
+    if (not is_same and not is_admin) or not username_exists:
+        return redirect('/')
+
     return render_template('userinfo.template', userinfo=users[username])
 
 @app.route('/admin', methods=['GET', 'POST'])
@@ -151,22 +152,36 @@ def begin_run(flow_name: str):
         flow_cfg = flows[flow_name]
         flow_input_cfg = flow_cfg['input']
         context = request.form['context']
+
         vs = list()
         print(flow_input_cfg['type'])
-        if flow_input_cfg['type'] == 'file':
+        if flow_input_cfg['type'] == 'file': # is this necessary?
             for k,v in request.form.items():
                 if k[0:4] == "file":
                     vs.append(v)
 
-        cmd_line = None
+        context_dict = dict()
         for c in flow_cfg['contexts']:
-            print(c)
-            if c['name'] == context:
-                cmd_line = c['script']
-                break
-        input_str = flow_input_cfg['argf'].format(*vs)
+            context_dict[c['name']] = c
 
-        cmd = "nohup bash {0} {1} &".format(shlex.quote(cmd_line), shlex.quote(input_str))
+        run_uuid = str(uuid.uuid4())
+                    
+        data = {
+            'nf_filename' : flow_cfg['script'],
+            'new_root' : flow_cfg['directory'],
+            'prog_dir' : flow_cfg['prog_directory'],
+            'arguments' : context_dict[context]['arguments'],
+            'input_str' : flow_input_cfg['argf'].format(*vs),
+            #
+            'user': flask_login.current_user.id,
+            'run_uuid': run_uuid,
+            'sample_group': 'asdf',
+            'workflow': flow_name,
+            'context': context
+        }
+        data_json = json.dumps(data)
+        
+        cmd = "python3 go.py {0} &".format(shlex.quote(data_json))
         print(cmd)
         os.system(cmd)
         return redirect("/flow/{0}".format(flow_name))
@@ -191,12 +206,15 @@ def list_runs(flow_name : str):
         flow_cfg = flows[flow_name]
     except:
         abort(404)
-    nf_directory = pathlib.Path(flow_cfg['directory'])
-    table = nflib.parseHistoryFile(nf_directory / 'history')
-    table.reverse()
-    datum = { 'table': table, 'flow_name': flow_name }
-    data.append(datum)
-    return render_template('list_runs.template', data=data)
+
+    data = con.execute('select * from nfruns where workflow = ? order by "start_epochtime" desc', (flow_name,)).fetchall()
+#    print(data)
+#    nf_directory = pathlib.Path(flow_cfg['directory'])
+#    table = nflib.parseHistoryFile(nf_directory / 'history')
+#    table.reverse()
+#    datum = { 'table': table, 'flow_name': flow_name }
+#    data.append(datum)
+    return render_template('list_runs.template', stuff={ 'flow_name': flow_cfg['name'] }, data=data)
 
 @app.route('/flow/<flow_name>/details/<run_uuid>')
 @flask_login.login_required
