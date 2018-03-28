@@ -41,11 +41,10 @@ shutil.copy2(str(prog_dir / nf_filename), str(run_dir))
 try:
     shutil.copy2(str(prog_dir / 'nextflow.config'), str(run_dir))
 except:
-    pass
-try:
-    shutil.copy2(str(prog_dir / 'nextflow' / 'nextflow.config'), str(run_dir))
-except:
-    pass
+    try:
+        shutil.copy2(str(prog_dir / 'nextflow' / 'nextflow.config'), str(run_dir))
+    except:
+        print("No nextflow.config found")
 
 oldpwd = os.getcwd()
 os.chdir(str(run_dir))
@@ -66,6 +65,9 @@ def run_nextflow(queue):
         time.sleep(0.1)
     procchild = proc.children()[0]
     print("found child process: {0}".format(str(procchild)))
+    if not procchild.name() == 'nextflow':
+        print("Excuse me?")
+        os.exit(-127)
     pid = procchild.pid
     queue.put(pid)
     queue.put(ppid)
@@ -101,9 +103,26 @@ os.makedirs('maps', exist_ok=True)
 with open(str(pathlib.Path('pids') / "{0}.pid".format(internal_uuid)), 'w') as f:
     f.write(pid)
 
+#ln -s "${DIR}" "${NEWROOT}/maps/${INTERNAL_UUID}"
+os.symlink(str(run_dir), str(new_root / 'maps' / internal_uuid))
 os.symlink(str(run_dir / 'trace.txt'), str(pathlib.Path('traces') / "{0}.trace".format(internal_uuid)))
 
-#HistoryEntry = namedtuple('HistoryEntry', ['date_time', 'duration', 'code_name', 'status', 'hash', 'uuid', 'command_l
+#  1 date_time
+#  2 duration
+#  3 code_name
+#  4 status
+#  5 hash
+#  6 uuid
+#  7 command_line
+#  8 user
+#  9 sample_group
+# 10 workflow
+# 11 context
+# 12 run_uuid primary key not null
+# 13 start_epochtime
+# 14 pid
+# 15 ppid
+# 16 end_epochtime
 
 end_epochtime = str(int(time.time()))
 hist = nflib.parseHistoryFile(run_dir / '.nextflow' / 'history')
@@ -127,12 +146,12 @@ T.join()
 
 os.remove(str(pathlib.Path('pids') / "{0}.pid".format(internal_uuid)))
 
-h = []
-for history_i_fn in glob.glob('runs/*/.nextflow/history'):
-    with open(history_i_fn) as history_i:
-        h.append(history_i.read())
-with open("history", 'w') as history_f:
-    history_f.write("".join(h))
+#h = []
+#for history_i_fn in glob.glob('runs/*/.nextflow/history'):
+#    with open(history_i_fn) as history_i:
+#        h.append(history_i.read())
+#with open("history", 'w') as history_f:
+#    history_f.write("".join(h))
 
 hist = nflib.parseHistoryFile(run_dir / '.nextflow' / 'history')
 con.execute("delete from nfruns where uuid = ?", (internal_uuid,))
@@ -150,6 +169,6 @@ other = (user,
          end_epochtime)
 con.execute("insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s)
 con.commit()
-    
+
 os.chdir(str(oldpwd))
 print("go.py: done")

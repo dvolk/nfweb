@@ -5,7 +5,7 @@
 CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command_line, user, sample_group, workflow, context, run_uuid primary key not null, start_epochtime, pid, ppid, end_epochtime);
 -->
 
-<h2>Running</h2>
+<h4>Running</h4>
 <table class="table table-hover table-sm">
   <thead>
     <tr>
@@ -13,7 +13,6 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
       <th scope="col">Workflow</th>
       <th scope="col">Context</th>
       <th scope="col">User</th>
-      <th scope="col">Status</th>
       <th scope="col">Action</th>
     </tr>
   </thead> 
@@ -24,22 +23,13 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
       <td>{{ entry[9] }}</td>
       <td>{{ entry[10] }}</td>
       <td>{{ entry[7] }}</td>
-      <td>
-	<span href="#" style="padding: 3px; background-color: {% if entry[3] == "ERR" %}#FF6347{% elif entry[3] == "OK" %}#F0F8FF{% else %}#00BFFF{% endif %}">
-	  {% if entry[3] == "-" %}
-	  RUNNING
-	  {% else %}
-	  {{ entry[3] }}
-	  {% endif %}
-	  <span>
-      </td>
       <td><a href="/flow/{{ entry[9] }}/details/{{ entry[5] }}">Details</a></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 
-<h2>Last 5 Failed</h2>
+<h4>Last 5 Failed</h4>
 <table class="table table-hover table-sm">
   <thead>
     <tr>
@@ -47,7 +37,6 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
       <th scope="col">Workflow</th>
       <th scope="col">Context</th>
       <th scope="col">User</th>
-      <th scope="col">Status</th>
       <th scope="col">Action</th>
     </tr>
   </thead> 
@@ -58,22 +47,13 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
       <td>{{ entry[9] }}</td>
       <td>{{ entry[10] }}</td>
       <td>{{ entry[7] }}</td>
-      <td>
-	<span href="#" style="padding: 3px; background-color: {% if entry[3] == "ERR" %}#FF6347{% elif entry[3] == "OK" %}#F0F8FF{% else %}#00BFFF{% endif %}">
-	  {% if entry[3] == "-" %}
-	  RUNNING
-	  {% else %}
-	  {{ entry[3] }}
-	  {% endif %}
-	  <span>
-      </td>
       <td><a href="/flow/{{ entry[9] }}/details/{{ entry[5] }}">Details</a></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 
-<h2>Last 5 OK</h2>
+<h4>Last 5 OK</h4>
 <table class="table table-hover table-sm">
   <thead>
     <tr>
@@ -81,7 +61,6 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
       <th scope="col">Workflow</th>
       <th scope="col">Context</th>
       <th scope="col">User</th>
-      <th scope="col">Status</th>
       <th scope="col">Action</th>
     </tr>
   </thead> 
@@ -92,15 +71,6 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
       <td>{{ entry[9] }}</td>
       <td>{{ entry[10] }}</td>
       <td>{{ entry[7] }}</td>
-      <td>
-	<span href="#" style="padding: 3px; background-color: {% if entry[3] == "ERR" %}#FF6347{% elif entry[3] == "OK" %}#F0F8FF{% else %}#00BFFF{% endif %}">
-	  {% if entry[3] == "-" %}
-	  RUNNING
-	  {% else %}
-	  {{ entry[3] }}
-	  {% endif %}
-	  <span>
-      </td>
       <td><a href="/flow/{{ entry[9] }}/details/{{ entry[5] }}">Details</a></td>
     </tr>
     {% endfor %}

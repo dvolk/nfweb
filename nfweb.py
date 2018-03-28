@@ -107,7 +107,8 @@ def admin():
         return redirect('/')
     
     if request.method == 'GET':
-        return render_template('admin.template', config_yaml=open("config.yaml").read())
+        with open("config.yaml") as f:
+            return render_template('admin.template', config_yaml=f.read())
     if request.method == 'POST':
         if request.form['config']:
             old_cfg = cfg.config
@@ -158,7 +159,12 @@ def begin_run(flow_name: str):
         if flow_input_cfg['type'] == 'file': # is this necessary?
             for k,v in request.form.items():
                 if k[0:4] == "file":
-                    vs.append(v)
+                    if pathlib.Path(v).is_file():
+                        vs.append(v)
+
+        print(len(vs), flow_input_cfg['argc'])
+        if len(vs) < flow_input_cfg['argc']:
+            return redirect("/flow/{0}/new".format(flow_name))
 
         context_dict = dict()
         for c in flow_cfg['contexts']:

@@ -8,9 +8,9 @@ nextflows:
     version: "0.4.0"
     contexts:
       - name: Local
-        arguments: ""
+        arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_fasta /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/ref.fa --ref_metadata_tsv /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/remove_contam_metadata.tsv --outprefix OUT"
       - name: Azure
-        arguments: ""
+        arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_fasta /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/ref.fa --ref_metadata_tsv /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/remove_contam_metadata.tsv --outprefix OUT -profile azure -process.executor ignite -cluster.maxCpus 0 -cluster.join path:/datadisks/disk1/cifs/cluster -resume"
     input:
       description: "A single pair of fastq.gz files"
       type: file
@@ -44,9 +44,9 @@ nextflows:
     version: "0.4.0"
     contexts:
       - name: Local
-        arguments: ""
+        arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_dir /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.NC_000962.3/ --output_dir variant_call_out --sample_name my_sample"
       - name: Azure
-        arguments: ""
+        arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_dir /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.NC_000962.3/ --output_dir variant_call_out --sample_name my_sample -profile azure -process.executor ignite -cluster.maxCpus 0 -cluster.join path:/datadisks/disk1/cifs/cluster -resume"
     input:
       description: "A single pair of fastq.gz files"
       type: file
@@ -72,8 +72,8 @@ nextflows:
 users:
   - name: "compass"
     password: "compass"
-    capabilities: ["view_flows"]
+    capabilities: []
 
   - name: "denis.volk@ndm.ox.ac.uk"
     password: "javasucks"
-    capabilities: ["view_flows", "run_flows", "admin"]
+    capabilities: ["admin"]
