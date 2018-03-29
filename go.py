@@ -9,7 +9,6 @@ import threading
 import time
 import subprocess
 import queue
-import glob
 import shlex
 import json
 import sqlite3
@@ -26,7 +25,6 @@ new_root = pathlib.Path(data['new_root'])
 prog_dir = pathlib.Path(data['prog_dir'])
 arguments = data['arguments']
 input_str = data['input_str']
-# --
 user = data['user']
 sample_group = data['sample_group']
 workflow = data['workflow']
@@ -79,6 +77,8 @@ def run_nextflow(queue):
 T = threading.Thread(target=run_nextflow, args=(q,))
 T.start()
 
+# Do other stuff while nextflow is running
+
 pid = str(q.get())
 ppid = str(q.get())
 
@@ -103,7 +103,6 @@ os.makedirs('maps', exist_ok=True)
 with open(str(pathlib.Path('pids') / "{0}.pid".format(internal_uuid)), 'w') as f:
     f.write(pid)
 
-#ln -s "${DIR}" "${NEWROOT}/maps/${INTERNAL_UUID}"
 os.symlink(str(run_dir), str(new_root / 'maps' / internal_uuid))
 os.symlink(str(run_dir / 'trace.txt'), str(pathlib.Path('traces') / "{0}.trace".format(internal_uuid)))
 
@@ -138,25 +137,18 @@ other = (user,
 
 con = sqlite3.connect("{0}/nfweb.sqlite".format(oldpwd))
 s = tuple(list(hist[0])) + other
-#print(s)
 con.execute("insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s)
 con.commit()
+
+# wait for nextflow to finish
 
 T.join()
 
 os.remove(str(pathlib.Path('pids') / "{0}.pid".format(internal_uuid)))
 
-#h = []
-#for history_i_fn in glob.glob('runs/*/.nextflow/history'):
-#    with open(history_i_fn) as history_i:
-#        h.append(history_i.read())
-#with open("history", 'w') as history_f:
-#    history_f.write("".join(h))
-
 hist = nflib.parseHistoryFile(run_dir / '.nextflow' / 'history')
 con.execute("delete from nfruns where uuid = ?", (internal_uuid,))
 s = tuple(list(hist[0])) + other
-#print(s)
 end_epochtime = str(int(time.time()))
 other = (user,
          sample_group,
