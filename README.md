@@ -13,4 +13,4 @@ nfweb is a minimal web front-end for nextflow written in python and flask
     FLASK_APP=nfweb.py flask run
 
 # Configure
-    nfweb is configured by editing config.yaml
+nfweb is configured by editing config.yaml
