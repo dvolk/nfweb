@@ -20,7 +20,7 @@ login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = '/login'
 
-con = sqlite3.connect('nfweb.sqlite')
+con = sqlite3.connect('nfweb.sqlite',check_same_thread=False)
 con.execute("CREATE TABLE if not exists nfruns (date_time, duration, code_name, status, hash, uuid, command_line, user, sample_group, workflow, context, run_uuid primary key not null, start_epochtime, pid, ppid, end_epochtime);")
 con.commit()
 
