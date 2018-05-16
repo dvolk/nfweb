@@ -11,6 +11,8 @@ import sqlite3
 from flask import Flask, request, render_template, redirect, abort, url_for
 import flask_login
 
+from passlib.hash import bcrypt
+
 import nflib
 import config
 
@@ -43,7 +45,10 @@ def request_loader(request):
     user = User()
     user.id = username
 
-    user.is_authenticated = request.form['password'] == users[username]['password']
+    form_password = request.form['password']
+    password_hash = users[form_username]['password']
+
+    user.is_authenticated = bcrypt.verify(form_password, password_hash)
     return user
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -51,12 +56,15 @@ def login():
     if request.method == 'GET':
         return render_template('login.template')
     if request.method == 'POST':
-        username = request.form['username']
-        if username in users and request.form['password'] == users[username]['password']:
-            user = User()
-            user.id = username
-            flask_login.login_user(user)
-            return redirect('/')
+        form_username = request.form['username']
+        form_password = request.form['password']
+        if form_username in users:
+            password_hash = users[form_username]['password']
+            if bcrypt.verify(form_password, password_hash):
+                user = User()
+                user.id = form_username
+                flask_login.login_user(user)
+                return redirect('/')
         return redirect('/login')
 
 def reload_cfg():
