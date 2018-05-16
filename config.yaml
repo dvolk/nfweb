@@ -71,9 +71,10 @@ nextflows:
 
 users:
   - name: "compass"
-    password: "compass"
+    password: '$2a$12$NhIPF.mW24TkOHszeXFvKeGUPTF2zxvwGSSUtNK1PF8bATRoJnjJK'
     capabilities: []
 
   - name: "denis.volk@ndm.ox.ac.uk"
-    password: "javasucks"
+    password: '$2a$12$HTHZ/i2IBOZUyemyXH.Jlu7GJGQqYSmcsf9ABZlr.id.n6tPrAzca'
     capabilities: ["admin"]
+
