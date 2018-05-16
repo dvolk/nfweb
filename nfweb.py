@@ -166,14 +166,10 @@ def begin_run(flow_name: str):
         flow_input_cfg = flow_cfg['input']
         context = request.form['context']
 
-        print(request.form.items())
         vs = list()
-        for k,v in request.form.items():
-            if k[0:15] == "nfwebparaminput":
-                vs.append(v)
-        print(vs)
-        vs = sorted(vs)
-        print(vs)
+        for key in sorted(request.form.keys()):
+            if key[0:15] == 'nfwebparaminput':
+                vs.append(request.form[key])
 
         print(len(vs), flow_input_cfg['description'])
         if len(vs) < len(flow_input_cfg['description']):
