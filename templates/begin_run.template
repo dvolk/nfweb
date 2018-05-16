@@ -2,11 +2,8 @@
 {% block content %}
 
 <h5>Create new run for {{ flow['name'] }}</h5>
-<p>Input description: {{ incfg['description'] }}</p>
 <p>Working directory: {{ flow['directory'] }}</p>
 
-
-{% if incfg['type'] == 'file' %}
 <form action='/flow/{{ flow['name'] }}/new' method='POST'>
   <div class="input-group mb-3">
     <div class="input-group-prepend">
@@ -18,16 +15,14 @@
       {% endfor %}
     </select>
   </div>
-  {% for n in range(incfg['argc']) %}
+  {% for n in range(incfg['description']|length) %}
   <div class="input-group mb-3">
     <div class="input-group-prepend">
-      <span class="input-group-text" id="basic-addon1">File path {{ n + 1 }}</span>
+      <span class="input-group-text" id="basic-addon1">{{ incfg['description'][n] }}</span>
     </div>
-    <input name="file{{ n + 1}}" type="text" class="form-control" aria-label="File path {{ n+1 }}" aria-describedby="basic-addon1">
+    <input name="nfwebparaminput{{ n + 1}}" type="text" class="form-control" aria-label="{{ incfg['description'][n] }}" aria-describedby="basic-addon1">
   </div>
   {% endfor %}
-
-  {% endif %}
 
   <button type="submit" class="btn btn-primary">Submit</button>
 </form>
