@@ -22,7 +22,7 @@ login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = '/login'
 
-con = sqlite3.connect('nfweb.sqlite')
+con = sqlite3.connect('nfweb.sqlite', check_same_thread=False)
 con.execute("CREATE TABLE if not exists nfruns (date_time, duration, code_name, status, hash, uuid, command_line, user, sample_group, workflow, context, run_uuid primary key not null, start_epochtime, pid, ppid, end_epochtime);")
 con.commit()
 
@@ -86,7 +86,7 @@ reload_cfg()
 def logout():
     flask_login.logout_user()
     return redirect('/')
-        
+
 # todo move this and similar to nflib.py
 @app.route('/')
 @flask_login.login_required
@@ -117,7 +117,7 @@ def userinfo(username: str):
 def admin():
     if not is_admin():
         return redirect('/')
-    
+
     if request.method == 'GET':
         with open("config.yaml") as f:
             return render_template('admin.template', config_yaml=f.read())
@@ -166,16 +166,17 @@ def begin_run(flow_name: str):
         flow_input_cfg = flow_cfg['input']
         context = request.form['context']
 
+        print(request.form.items())
         vs = list()
-        print(flow_input_cfg['type'])
-        if flow_input_cfg['type'] == 'file': # is this necessary?
-            for k,v in request.form.items():
-                if k[0:4] == "file":
-                    if pathlib.Path(v).is_file():
-                        vs.append(v)
+        for k,v in request.form.items():
+            if k[0:15] == "nfwebparaminput":
+                vs.append(v)
+        print(vs)
+        vs = sorted(vs)
+        print(vs)
 
-        print(len(vs), flow_input_cfg['argc'])
-        if len(vs) < flow_input_cfg['argc']:
+        print(len(vs), flow_input_cfg['description'])
+        if len(vs) < len(flow_input_cfg['description']):
             return redirect("/flow/{0}/new".format(flow_name))
 
         context_dict = dict()
@@ -183,7 +184,7 @@ def begin_run(flow_name: str):
             context_dict[c['name']] = c
 
         run_uuid = str(uuid.uuid4())
-                    
+
         data = {
             'nf_filename' : flow_cfg['script'],
             'new_root' : flow_cfg['directory'],
@@ -197,7 +198,7 @@ def begin_run(flow_name: str):
             'context': context
         }
         data_json = json.dumps(data)
-        
+
         cmd = "python3 go.py {0} &".format(shlex.quote(data_json))
         print(cmd)
         os.system(cmd)
