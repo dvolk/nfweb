@@ -12,10 +12,10 @@ nextflows:
       - name: Azure
         arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_fasta /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/ref.fa --ref_metadata_tsv /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/remove_contam_metadata.tsv --outprefix OUT -profile azure -process.executor ignite -cluster.maxCpus 0 -cluster.join path:/datadisks/disk1/cifs/cluster -resume"
     input:
-      description: "A single pair of fastq.gz files"
-      type: file
-      argc: 2
       argf: "--reads_in1 {0} --reads_in2 {1}"
+      description: 
+        - "File 1"
+        - "File 2"
 
   - name: "clockwork-qc"
     show: yes
@@ -30,10 +30,10 @@ nextflows:
       - name: Azure
         arguments: '-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_fasta /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.NC_000962.3/ref.fa --output_dir qc_out -profile azure -process.executor ignite -cluster.maxCpus 0 -cluster.join path:/datadisks/disk1/cifs/cluster -resume'
     input:
-      description: "A single pair of fastq.gz files"
-      type: file
-      argc: 2
       argf: "--reads_in1 {0} --reads_in2 {1}"
+      description:
+        - "File 1"
+        - "File 2"
 
   - name: "clockwork-variant_call"
     show: yes
@@ -48,10 +48,10 @@ nextflows:
       - name: Azure
         arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_dir /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.NC_000962.3/ --output_dir variant_call_out --sample_name my_sample -profile azure -process.executor ignite -cluster.maxCpus 0 -cluster.join path:/datadisks/disk1/cifs/cluster -resume"
     input:
-      description: "A single pair of fastq.gz files"
-      type: file
-      argc: 2
       argf: "--reads_in1 {0} --reads_in2 {1}"
+      description:
+        - "File 1"
+        - "File 2"
 
   - name: "nxtest"
     script: 'test.nf'
@@ -64,16 +64,31 @@ nextflows:
       - name: Local
         arguments: ""
     input:
-      description: "A single fasta file"
-      type: file
-      argc: 1
       argf: "--in_fasta {0}"
+      description:
+        - "A single fasta file"
+
+  - name: "nxtest2"
+    script: 'test.nf'
+    show: yes
+    directory: "/tmp/nxtest"
+    prog_directory: '/home/ndm.local/denisv/nxtest'
+    description: "Test example flow from nextflow.io"
+    version: "1.0"
+    contexts:
+      - name: Local
+        arguments: ""
+    input:
+      argf: "--in_fasta {0} {1} {2}"
+      description:
+        - A single fasta file
 
 users:
   - name: "compass"
-    password: "compass"
-    capabilities: []
+    password: '$2a$12$NhIPF.mW24TkOHszeXFvKeGUPTF2zxvwGSSUtNK1PF8bATRoJnjJK'
+    capabilities: ["admin"]
 
   - name: "denis.volk@ndm.ox.ac.uk"
-    password: "javasucks"
+    password: '$2a$12$HTHZ/i2IBOZUyemyXH.Jlu7GJGQqYSmcsf9ABZlr.id.n6tPrAzca'
     capabilities: ["admin"]
+

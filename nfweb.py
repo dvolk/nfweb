@@ -11,6 +11,8 @@ import sqlite3
 from flask import Flask, request, render_template, redirect, abort, url_for
 import flask_login
 
+from passlib.hash import bcrypt
+
 import nflib
 import config
 
@@ -43,7 +45,10 @@ def request_loader(request):
     user = User()
     user.id = username
 
-    user.is_authenticated = request.form['password'] == users[username]['password']
+    form_password = request.form['password']
+    password_hash = users[form_username]['password']
+
+    user.is_authenticated = bcrypt.verify(form_password, password_hash)
     return user
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -51,12 +56,15 @@ def login():
     if request.method == 'GET':
         return render_template('login.template')
     if request.method == 'POST':
-        username = request.form['username']
-        if username in users and request.form['password'] == users[username]['password']:
-            user = User()
-            user.id = username
-            flask_login.login_user(user)
-            return redirect('/')
+        form_username = request.form['username']
+        form_password = request.form['password']
+        if form_username in users:
+            password_hash = users[form_username]['password']
+            if bcrypt.verify(form_password, password_hash):
+                user = User()
+                user.id = form_username
+                flask_login.login_user(user)
+                return redirect('/')
         return redirect('/login')
 
 def reload_cfg():
@@ -78,7 +86,7 @@ reload_cfg()
 def logout():
     flask_login.logout_user()
     return redirect('/')
-        
+
 # todo move this and similar to nflib.py
 @app.route('/')
 @flask_login.login_required
@@ -109,7 +117,7 @@ def userinfo(username: str):
 def admin():
     if not is_admin():
         return redirect('/')
-    
+
     if request.method == 'GET':
         with open("config.yaml") as f:
             return render_template('admin.template', config_yaml=f.read())
@@ -158,16 +166,17 @@ def begin_run(flow_name: str):
         flow_input_cfg = flow_cfg['input']
         context = request.form['context']
 
+        print(request.form.items())
         vs = list()
-        print(flow_input_cfg['type'])
-        if flow_input_cfg['type'] == 'file': # is this necessary?
-            for k,v in request.form.items():
-                if k[0:4] == "file":
-                    if pathlib.Path(v).is_file():
-                        vs.append(v)
+        for k,v in request.form.items():
+            if k[0:15] == "nfwebparaminput":
+                vs.append(v)
+        print(vs)
+        vs = sorted(vs)
+        print(vs)
 
-        print(len(vs), flow_input_cfg['argc'])
-        if len(vs) < flow_input_cfg['argc']:
+        print(len(vs), flow_input_cfg['description'])
+        if len(vs) < len(flow_input_cfg['description']):
             return redirect("/flow/{0}/new".format(flow_name))
 
         context_dict = dict()
@@ -175,7 +184,7 @@ def begin_run(flow_name: str):
             context_dict[c['name']] = c
 
         run_uuid = str(uuid.uuid4())
-                    
+
         data = {
             'nf_filename' : flow_cfg['script'],
             'new_root' : flow_cfg['directory'],
@@ -189,7 +198,7 @@ def begin_run(flow_name: str):
             'context': context
         }
         data_json = json.dumps(data)
-        
+
         cmd = "python3 go.py {0} &".format(shlex.quote(data_json))
         print(cmd)
         os.system(cmd)
