@@ -15,12 +15,12 @@
       {% endfor %}
     </select>
   </div>
-  {% for n in range(incfg['description']|length) %}
+  {% for input in incfg['description'] %}
   <div class="input-group mb-3">
     <div class="input-group-prepend">
-      <span class="input-group-text" id="basic-addon1">{{ incfg['description'][n] }}</span>
+      <span class="input-group-text" id="basic-addon1">{{ input['name'] }}</span>
     </div>
-    <input name="nfwebparaminput{{ n + 1}}" type="text" class="form-control" aria-label="{{ incfg['description'][n] }}" aria-describedby="basic-addon1">
+    <input name="nfwebparaminput{{ input['position'] }}" type={{ input['type'] }} class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
   </div>
   {% endfor %}
 
