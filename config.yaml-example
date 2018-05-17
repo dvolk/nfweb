@@ -14,8 +14,12 @@ nextflows:
     input:
       argf: "--reads_in1 {0} --reads_in2 {1}"
       description: 
-        - "File 1"
-        - "File 2"
+        - position: 0
+          type: text
+          name: "File 1"
+        - position: 0
+          type: text
+          name: "File 2"
 
   - name: "clockwork-qc"
     show: yes
@@ -32,8 +36,12 @@ nextflows:
     input:
       argf: "--reads_in1 {0} --reads_in2 {1}"
       description:
-        - "File 1"
-        - "File 2"
+        - position: 0
+          type: text
+          name: "File 1"
+        - position: 0
+          type: text
+          name: "File 2"
 
   - name: "clockwork-variant_call"
     show: yes
@@ -50,8 +58,12 @@ nextflows:
     input:
       argf: "--reads_in1 {0} --reads_in2 {1}"
       description:
-        - "File 1"
-        - "File 2"
+        - position: 0
+          type: text
+          name: "File 1"
+        - position: 0
+          type: text
+          name: "File 2"
 
   - name: "nxtest"
     script: 'test.nf'
@@ -66,7 +78,9 @@ nextflows:
     input:
       argf: "--in_fasta {0}"
       description:
-        - "A single fasta file"
+        - position: 0 
+          type: text 
+          name: "A single fasta file"
 
   - name: "nxtest2"
     script: 'test.nf'
@@ -81,7 +95,16 @@ nextflows:
     input:
       argf: "--in_fasta {0} {1} {2}"
       description:
-        - A single fasta file
+        - position: 0 
+          type: text
+          "A single fasta file"
+        - position: 1
+          type: text
+          "Another single fasta file"
+        - position: 2
+          type: text
+          "A third single fasta file"
+
 
 users:
   - name: "compass"
