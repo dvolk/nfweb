@@ -1,5 +1,24 @@
 #!/usr/bin/python3
 
+#
+# This program is run by nfweb.py. It in turn runs nextflow.
+# The purpose of this indirection is to allow the it to detach
+# from the web gui so that it can be restarted without existing
+# runs being terminated.
+#
+
+#
+# From the working directory, it creates runs/uuid and launches
+# nextflow in that directory. Then it waits until nextflow creates
+# a file which contains the nextflow uuid that nextflow uses
+# to reference the run.
+#
+# Some symlinks are created to help access data more easily.
+#
+# The web gui uses an sqlite database (table nfruns) to keep
+# track of runs
+#
+
 import os
 import uuid
 import pathlib
@@ -16,9 +35,14 @@ import psutil
 
 import nflib
 
+# Seconds since 1/1/1970
+# https://en.wikipedia.org/wiki/Unix_time
 start_epochtime = str(int(time.time()))
+
+# Data to from nfweb.py is passed in here as json
 data = json.loads(sys.argv[1])
 
+# Rebind the data
 uuid = data['run_uuid']
 nf_filename = pathlib.Path(data['nf_filename'])
 new_root = pathlib.Path(data['new_root'])
@@ -30,12 +54,16 @@ sample_group = data['sample_group']
 workflow = data['workflow']
 context = data['context']
 
+# Create the run dir
 run_dir = new_root / "runs" / uuid
 print(run_dir)
 
 os.makedirs(str(run_dir), exist_ok=True)
+
+# Copy nextflow file to the run dir
 shutil.copy2(str(prog_dir / nf_filename), str(run_dir))
 
+# Copy the profile to the run dir. Search for the profile in the prog_dir and prog_dir/nextflow
 try:
     shutil.copy2(str(prog_dir / 'nextflow.config'), str(run_dir))
 except:
@@ -44,6 +72,7 @@ except:
     except:
         print("No nextflow.config found")
 
+# Cache the current directory and then change into the run directory.
 oldpwd = os.getcwd()
 os.chdir(str(run_dir))
 
@@ -51,6 +80,7 @@ T = None
 pid = None
 q = queue.Queue()
 
+# This functions runs nextflow, returns the nxtflow pid to the main thread and wait until nextflow finishes
 def run_nextflow(queue):
     cmd = "nextflow {0} -w {1} -with-trace -with-report -with-timeline -with-dag {2} {3}".format(nf_filename.name, new_root, arguments, input_str)
     print("nextflow cmdline: {0}".format(cmd))
@@ -58,11 +88,16 @@ def run_nextflow(queue):
     ppid = os.getpid()
     print("python process pid: {0}".format(ppid))
     proc = psutil.Process(ppid)
+
+    # wait until nextflow starts 
     while not proc.children():
         print("waiting for nextflow to start...")
         time.sleep(0.1)
+
     procchild = proc.children()[0]
     print("found child process: {0}".format(str(procchild)))
+
+    # never happened - not needed?
     if not procchild.name() == 'nextflow':
         print("Excuse me?")
         os.exit(-127)
@@ -77,22 +112,27 @@ def run_nextflow(queue):
 T = threading.Thread(target=run_nextflow, args=(q,))
 T.start()
 
-# Do other stuff while nextflow is running
-
+# continue once nextflow is started and we have the pids
 pid = str(q.get())
 ppid = str(q.get())
 
+# wait until nextflow creates the cache dir
 cache_dir = pathlib.Path(run_dir / '.nextflow' / 'cache')
 while not cache_dir.is_dir():
     print("Waiting for cache dir to be created...")
     time.sleep(1)
 
+# change into the working directory
 os.chdir(str(new_root))
 
+# Add the history entry from the nextflow file into the main history file
+# I don't think this is used any more?
 with open(str(run_dir / '.nextflow' / 'history')) as history_i:
     with open('history', 'a') as history_o:
         history_o.write(history_i.read())
 
+# get the nextflow run uuid. This is different from the nfweb uuid because we need that
+# before nextflow starts
 internal_uuid = (run_dir / '.nextflow' / 'cache').iterdir().__next__().name
 print("Internal uuid: {0}".format(internal_uuid))
 
@@ -100,12 +140,17 @@ os.makedirs('traces', exist_ok=True)
 os.makedirs('pids', exist_ok=True)
 os.makedirs('maps', exist_ok=True)
 
+# write the nextflow run pid into pids/uuid.pid
 with open(str(pathlib.Path('pids') / "{0}.pid".format(internal_uuid)), 'w') as f:
     f.write(pid)
 
+# link the run dir (runs/nfweb_uuid) to the internal uuid (maps/internal_uuid) so we can access the run directory
+# by referencing the internal uuid
 os.symlink(str(run_dir), str(new_root / 'maps' / internal_uuid))
+# link the trace
 os.symlink(str(run_dir / 'trace.txt'), str(pathlib.Path('traces') / "{0}.trace".format(internal_uuid)))
 
+# sqlite nfruns table columns reference
 #  1 date_time
 #  2 duration
 #  3 code_name
@@ -135,17 +180,19 @@ other = (user,
          ppid,
          end_epochtime)
 
+# add the run to the sqlite database
 con = sqlite3.connect("{0}/nfweb.sqlite".format(oldpwd))
 s = tuple(list(hist[0])) + other
 con.execute("insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s)
 con.commit()
 
 # wait for nextflow to finish
-
 T.join()
 
+# remove pid file
 os.remove(str(pathlib.Path('pids') / "{0}.pid".format(internal_uuid)))
 
+# update sqlite database with the end results
 hist = nflib.parseHistoryFile(run_dir / '.nextflow' / 'history')
 con.execute("delete from nfruns where uuid = ?", (internal_uuid,))
 s = tuple(list(hist[0])) + other
@@ -162,5 +209,7 @@ other = (user,
 con.execute("insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s)
 con.commit()
 
+# go back to the old directory
+# not needed?
 os.chdir(str(oldpwd))
 print("go.py: done")
