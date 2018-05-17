@@ -1,7 +1,9 @@
+#
+# nfweb is a simple interface to nextflow using the flask web framework
+#
+
 import json
-import subprocess
 import pathlib
-import typing
 import shlex
 import uuid
 import os
