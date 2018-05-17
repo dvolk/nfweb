@@ -52,7 +52,7 @@ pid = None
 q = queue.Queue()
 
 def run_nextflow(queue):
-    cmd = "nextflow {0} -w {1} -with-trace -with-report -with-timeline -with-dag {2} {3}".format(nf_filename.name, new_root, arguments, input_str)
+    cmd = "nextflow {0} -w {1}/SCRATCH -with-trace -with-report -with-timeline -with-dag {2} {3}".format(nf_filename.name, new_root, arguments, input_str)
     print("nextflow cmdline: {0}".format(cmd))
     P = subprocess.Popen(shlex.split(cmd))
     ppid = os.getpid()
