@@ -2,6 +2,7 @@
 # nfweb is a simple interface to nextflow using the flask web framework
 #
 
+import time
 import json
 import pathlib
 import shlex
@@ -211,6 +212,13 @@ def begin_run(flow_name: str):
             # execution context (i.e. local or slurm or whatever)
             'context': context
         }
+
+        # insert a dummy entry into the table so that the user sees that a run is starting
+        # this is replaced when the nextflow process starts
+        con.execute('insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                    (time.strftime("%Y-%m-%d %H:%M:%S"), '-', '-', 'STARTING', '-', '-', '-', data['user'], data['sample_group'],
+                     data['workflow'], data['context'], data['run_uuid'], str(int(time.time())), '-', '-', str(int(time.time()))))
+        con.commit()
 
         # convert to json
         data_json = json.dumps(data)
