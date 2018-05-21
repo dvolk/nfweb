@@ -183,6 +183,8 @@ other = (user,
 # add the run to the sqlite database
 con = sqlite3.connect("{0}/nfweb.sqlite".format(oldpwd))
 s = tuple(list(hist[0])) + other
+# delete dummy entry now that nextflow has started
+con.execute("delete from nfruns where run_uuid = ?", (uuid,))
 con.execute("insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s)
 con.commit()
 

@@ -20,7 +20,7 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
       <th scope="col">Status</th>
       <th scope="col">Action</th>
     </tr>
-  </thead> 
+  </thead>
   <tbody>
     {% for entry in data %}
     <tr>
@@ -38,8 +38,9 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
 	  {% endif %}
 	  <span>
       </td>
-      
+      {% if entry[3] != "STARTING" %}
       <td><a href="/flow/{{ stuff['flow_name'] }}/details/{{ entry[5] }}">Details</td>
+      {% endif %}
     </tr>
     {% endfor %}
   </tbody>
