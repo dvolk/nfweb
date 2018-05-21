@@ -2,7 +2,7 @@
 {% block content %}
 
 <h5>Create new run for {{ flow['name'] }}</h5>
-<p>Working directory: {{ flow['directory'] }}</p>
+<p>Working directory: {{ contextcfg['run_dir'] }}</p>
 
 <form action='/flow/{{ flow['name'] }}/new' method='POST'>
   <div class="input-group mb-3">

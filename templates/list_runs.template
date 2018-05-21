@@ -6,7 +6,25 @@
 </div>
 
 <!--
-CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command_line, user, sample_group, workflow, context, run_uuid primary key not null, start_epochtime, pid, ppid, end_epochtime);
+CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command_line, user, sample_group, workflow, context, root_dir, run_uuid primary key not null, start_epochtime, pid, ppid, end_epochtime);
+
+ 1 date_time
+ 2 duration
+ 3 code_name
+ 4 status
+ 5 hash
+ 6 uuid
+ 7 command_line
+ 8 user
+ 9 sample_group
+10 workflow
+11 context
+12 root_dir
+13 run_uuid primary key not null
+14 start_epochtime
+15 pid
+16 ppid
+17 end_epochtime
 -->
 
 <table class="table table-hover table-sm">

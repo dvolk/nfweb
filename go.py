@@ -45,7 +45,7 @@ data = json.loads(sys.argv[1])
 # Rebind the data
 uuid = data['run_uuid']
 nf_filename = pathlib.Path(data['nf_filename'])
-new_root = pathlib.Path(data['new_root'])
+root_dir = pathlib.Path(data['root_dir'])
 prog_dir = pathlib.Path(data['prog_dir'])
 arguments = data['arguments']
 input_str = data['input_str']
@@ -55,7 +55,7 @@ workflow = data['workflow']
 context = data['context']
 
 # Create the run dir
-run_dir = new_root / "runs" / uuid
+run_dir = root_dir / "runs" / uuid
 print(run_dir)
 
 os.makedirs(str(run_dir), exist_ok=True)
@@ -73,7 +73,7 @@ except:
         print("No nextflow.config found")
 
 # Cache the current directory and then change into the run directory.
-oldpwd = os.getcwd()
+oldpwd = pathlib.Path.cwd()
 os.chdir(str(run_dir))
 
 T = None
@@ -82,7 +82,7 @@ q = queue.Queue()
 
 # This functions runs nextflow, returns the nxtflow pid to the main thread and wait until nextflow finishes
 def run_nextflow(queue):
-    cmd = "nextflow {0} -w {1}/SCRATCH -with-trace -with-report -with-timeline -with-dag {2} {3}".format(nf_filename.name, new_root, arguments, input_str)
+    cmd = "nextflow {0} -w {1}/SCRATCH -with-trace -with-report -with-timeline -with-dag {2} {3}".format(nf_filename.name, root_dir, arguments, input_str)
     print("nextflow cmdline: {0}".format(cmd))
     P = subprocess.Popen(shlex.split(cmd))
     ppid = os.getpid()
@@ -123,7 +123,7 @@ while not cache_dir.is_dir():
     time.sleep(1)
 
 # change into the working directory
-os.chdir(str(new_root))
+os.chdir(str(root_dir))
 
 # Add the history entry from the nextflow file into the main history file
 # I don't think this is used any more?
@@ -146,7 +146,7 @@ with open(str(pathlib.Path('pids') / "{0}.pid".format(internal_uuid)), 'w') as f
 
 # link the run dir (runs/nfweb_uuid) to the internal uuid (maps/internal_uuid) so we can access the run directory
 # by referencing the internal uuid
-os.symlink(str(run_dir), str(new_root / 'maps' / internal_uuid))
+os.symlink(str(run_dir), str(root_dir / 'maps' / internal_uuid))
 # link the trace
 os.symlink(str(run_dir / 'trace.txt'), str(pathlib.Path('traces') / "{0}.trace".format(internal_uuid)))
 
@@ -174,6 +174,7 @@ other = (user,
          sample_group,
          workflow,
          context,
+         str(root_dir),
          uuid,
          start_epochtime,
          pid,
@@ -181,12 +182,8 @@ other = (user,
          end_epochtime)
 
 # add the run to the sqlite database
-con = sqlite3.connect("{0}/nfweb.sqlite".format(oldpwd))
 s = tuple(list(hist[0])) + other
-# delete dummy entry now that nextflow has started
-con.execute("delete from nfruns where run_uuid = ?", (uuid,))
-con.execute("insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s)
-con.commit()
+nflib.insertRun(s, uuid, oldpwd)
 
 # wait for nextflow to finish
 T.join()
@@ -196,20 +193,19 @@ os.remove(str(pathlib.Path('pids') / "{0}.pid".format(internal_uuid)))
 
 # update sqlite database with the end results
 hist = nflib.parseHistoryFile(run_dir / '.nextflow' / 'history')
-con.execute("delete from nfruns where uuid = ?", (internal_uuid,))
 s = tuple(list(hist[0])) + other
 end_epochtime = str(int(time.time()))
 other = (user,
          sample_group,
          workflow,
          context,
+         str(root_dir),
          uuid,
          start_epochtime,
          pid,
          ppid,
          end_epochtime)
-con.execute("insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s)
-con.commit()
+nflib.reinsertRun(s, uuid, internal_uuid, oldpwd)
 
 # go back to the old directory
 # not needed?
