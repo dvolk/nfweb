@@ -2,14 +2,12 @@
 # nfweb is a simple interface to nextflow using the flask web framework
 #
 
-import time
 import json
 import pathlib
 import shlex
 import uuid
 import os
 import signal
-import sqlite3
 
 from flask import Flask, request, render_template, redirect, abort, url_for
 import flask_login
@@ -26,11 +24,6 @@ app.secret_key = 'secret key'
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = '/login'
-
-# nfweb.sqlite nfruns table is used for tracking nextflow runs
-con = sqlite3.connect('nfweb.sqlite',check_same_thread=False)
-con.execute("CREATE TABLE if not exists nfruns (date_time, duration, code_name, status, hash, uuid, command_line, user, sample_group, workflow, context, run_uuid primary key not null, start_epochtime, pid, ppid, end_epochtime);")
-con.commit()
 
 class User(flask_login.UserMixin):
     pass
@@ -77,6 +70,11 @@ def reload_cfg():
     global cfg
     cfg = config.Config()
     cfg.load("config.yaml")
+    global systemCfg
+    systemCfg = dict()    
+    for c in cfg.get('system')['contexts']:
+        print(c)
+        systemCfg[c['name']] = c
     global flows
     flows = dict()
     for f in cfg.get('nextflows'):
@@ -97,12 +95,7 @@ def logout():
 @app.route('/')
 @flask_login.login_required
 def status():
-    # the root page lists the current running runs and the last 5 successful and failed runs
-    running = con.execute('select * from nfruns where status = "-" order by "start_epochtime" desc').fetchall()
-    recent = con.execute('select * from nfruns where status = "OK" order by "start_epochtime" desc limit 5').fetchall()
-    failed = con.execute('select * from nfruns where status = "ERR" order by "start_epochtime" desc limit 5').fetchall()
-
-    print(running)
+    (running, recent, failed) = nflib.getStatus()
     return render_template('status.template', running=running, recent=recent, failed=failed)
 
 def is_admin():
@@ -166,7 +159,22 @@ def begin_run(flow_name: str):
     if request.method == 'GET':
         flow_cfg = flows[flow_name]
         flow_input_cfg = flow_cfg['input']
-        return render_template('begin_run.template', flow=flow_cfg, incfg=flow_input_cfg)
+
+        run_context_dict = dict()
+        for c in flow_cfg['contexts']:
+            run_context_dict[c['name']] = c 
+
+            if 'root_dirs' in systemCfg[c['name']]:
+                run_context_dict[c['name']]['root_dir'] = systemCfg[c['name']]['root_dirs'] + flow_cfg['root_dir']
+            else:
+                run_context_dict[c['name']]['root_dir'] = flow_cfg['root_dir']
+
+            if 'prog_dirs' in systemCfg[c['name']]:
+                run_context_dict[c['name']]['prog_dir'] = systemCfg[c['name']]['prog_dirs'] + flow_cfg['prog_dir']
+            else:
+                run_context_dict[c['name']]['prog_dir'] = flow_cfg['prog_dir']
+
+        return render_template('begin_run.template', flow=flow_cfg, incfg=flow_input_cfg, contextcfg=run_context_dict)
 
     elif request.method == 'POST':
         flow_cfg = flows[flow_name]
@@ -183,22 +191,32 @@ def begin_run(flow_name: str):
         if len(vs) < len(flow_input_cfg['description']):
             return redirect("/flow/{0}/new".format(flow_name))
 
-        context_dict = dict()
+        run_context_dict = dict()
         for c in flow_cfg['contexts']:
-            context_dict[c['name']] = c
+            run_context_dict[c['name']] = c 
+
+        if 'root_dirs' in systemCfg[context]:
+            root_dir = systemCfg[context]['root_dirs'] + flow_cfg['root_dir']
+        else:
+            root_dir = flow_cfg['root_dir']
+
+        if 'prog_dirs' in systemCfg[context]:
+            prog_dir = systemCfg[context]['prog_dirs'] + flow_cfg['prog_dir']
+        else:
+            prog_dir = flow_cfg['prog_dir']
 
         run_uuid = str(uuid.uuid4())
 
         # all the data that is passed to go.py (which starts nextflow)
         data = {
-            # path to nextflow file relative to the prog_directory
+            # path to nextflow file relative to the prog_dir
             'nf_filename' : flow_cfg['script'],
             # nextflow work directory
-            'new_root' : flow_cfg['directory'],
+            'root_dir' : root_dir,
             # directory containing nextflow file and misc other files
-            'prog_dir' : flow_cfg['prog_directory'],
+            'prog_dir' : prog_dir,
             # static arguments to nextflow
-            'arguments' : context_dict[context]['arguments'],
+            'arguments' : run_context_dict[context]['arguments'],
             # user arguments to nextflow
             'input_str' : flow_input_cfg['argf'].format(*vs),
             # web user id that started the run
@@ -213,12 +231,14 @@ def begin_run(flow_name: str):
             'context': context
         }
 
-        # insert a dummy entry into the table so that the user sees that a run is starting
-        # this is replaced when the nextflow process starts
-        con.execute('insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                    (time.strftime("%Y-%m-%d %H:%M:%S"), '-', '-', 'STARTING', '-', '-', '-', data['user'], data['sample_group'],
-                     data['workflow'], data['context'], data['run_uuid'], str(int(time.time())), '-', '-', str(int(time.time()))))
-        con.commit()
+        try:
+            # insert a dummy entry into the table so that the user sees that a run is starting
+            # this is replaced when the nextflow process starts
+            nflib.insertDummyRun(data)
+        except Exception as e:
+            print('Error occured entering dummy run into DB.')
+            print(e)
+            abort(404)
 
         # convert to json
         data_json = json.dumps(data)
@@ -238,16 +258,19 @@ def list_runs(flow_name : str):
     except:
         abort(404)
 
-    data = con.execute('select * from nfruns where workflow = ? order by "start_epochtime" desc', (flow_name,)).fetchall()
+    data = nflib.getWorkflow(flow_name)
     return render_template('list_runs.template', stuff={ 'flow_name': flow_cfg['name'] }, data=data)
 
 @app.route('/flow/<flow_name>/details/<run_uuid>')
 @flask_login.login_required
 def run_details(flow_name : str, run_uuid: int):
-    nf_directory = pathlib.Path(flows[flow_name]['directory'])
+    print( flow_name, " with uuid ", run_uuid)
+    data = nflib.getRun(flow_name, run_uuid)
+    # root_dir is entry 11
+    nf_directory = pathlib.Path(data[0][11])
 
     buttons = { }
-    pid_filename = pathlib.Path(flows[flow_name]['directory']) / 'pids' / "{0}.pid".format(run_uuid)
+    pid_filename = nf_directory / 'pids' / "{0}.pid".format(run_uuid)
     if pid_filename.is_file():
         buttons['stop'] = True
     else:
@@ -255,16 +278,16 @@ def run_details(flow_name : str, run_uuid: int):
         buttons['delete'] = True
         # TODO: make this work
         buttons['rerun'] = True
-    log_filename = pathlib.Path(flows[flow_name]['directory']) / 'maps' / run_uuid / '.nextflow.log'
+    log_filename = nf_directory / 'maps' / run_uuid / '.nextflow.log'
     if log_filename.is_file():
         buttons['log'] = True
-    report_filename = pathlib.Path(flows[flow_name]['directory']) / 'maps' / run_uuid / 'report.html'
+    report_filename = nf_directory / 'maps' / run_uuid / 'report.html'
     if report_filename.is_file():
         buttons['report'] = True
-    timeline_filename = pathlib.Path(flows[flow_name]['directory']) / 'maps' / run_uuid / 'timeline.html'
+    timeline_filename = nf_directory / 'maps' / run_uuid / 'timeline.html'
     if timeline_filename.is_file():
         buttons['timeline'] = True
-    dagdot_filename = pathlib.Path(flows[flow_name]['directory']) / 'maps' / run_uuid / 'dag.dot'
+    dagdot_filename = nf_directory / 'maps' / run_uuid / 'dag.dot'
     if dagdot_filename.is_file():
         buttons['dagdot'] = True
 
@@ -277,7 +300,15 @@ def run_details(flow_name : str, run_uuid: int):
 @app.route('/flow/<flow_name>/log/<run_uuid>')
 @flask_login.login_required
 def show_log(flow_name : str, run_uuid: int):
-    log_filename = pathlib.Path(flows[flow_name]['directory']) / 'maps' / run_uuid / '.nextflow.log'
+    try:
+        data = nflib.getRun(flow_name, run_uuid)
+    except Exception as e:
+        print('Error occured getting run info.')
+        print(e)
+        abort(404)
+
+    # Using root_dir
+    log_filename = pathlib.Path(data[0][11]) / 'maps' / run_uuid / '.nextflow.log'
     content = None
     with open(str(log_filename)) as f:
         content = f.read()
@@ -287,28 +318,60 @@ def show_log(flow_name : str, run_uuid: int):
 @app.route('/flow/<flow_name>/report/<run_uuid>')
 @flask_login.login_required
 def show_report(flow_name : str, run_uuid: int):
-    report_filename = pathlib.Path(flows[flow_name]['directory']) / 'maps' / run_uuid / 'report.html'
+    try:
+        data = nflib.getRun(flow_name, run_uuid)
+    except Exception as e:
+        print('Error occured getting run info.')
+        print(e)
+        abort(404)
+
+    # Using root_dir
+    report_filename = pathlib.Path(data[0][11]) / 'maps' / run_uuid / 'report.html'
     with open(str(report_filename)) as f:
         return f.read()
 
 @app.route('/flow/<flow_name>/timeline/<run_uuid>')
 @flask_login.login_required
 def show_timeline(flow_name: str, run_uuid: int):
-    timeline_filename = pathlib.Path(flows[flow_name]['directory']) / 'maps' / run_uuid / 'timeline.html'
+    try:
+        data = nflib.getRun(flow_name, run_uuid)
+    except Exception as e:
+        print('Error occured getting run info.')
+        print(e)
+        abort(404)
+
+    # Using root_dir
+    timeline_filename = pathlib.Path(data[0][11]) / 'maps' / run_uuid / 'timeline.html'
     with open(str(timeline_filename)) as f:
         return f.read()
 
 @app.route('/flow/<flow_name>/dagdot/<run_uuid>')
 @flask_login.login_required
 def show_dagdot(flow_name: str, run_uuid: int):
-    dagdot_filename = pathlib.Path(flows[flow_name]['directory']) / 'maps' / run_uuid / 'dag.dot'
+    try:
+        data = nflib.getRun(flow_name, run_uuid)
+    except Exception as e:
+        print('Error occured getting run info.')
+        print(e)
+        abort(404)
+
+    # Using root_dir
+    dagdot_filename = pathlib.Path(data[0][11]) / 'maps' / run_uuid / 'dag.dot'
     with open(str(dagdot_filename)) as f:
         return f.read()
 
 @app.route('/flow/<flow_name>/stop/<run_uuid>')
 @flask_login.login_required
 def kill_nextflow(flow_name : str, run_uuid: int):
-    pid_filename = pathlib.Path(flows[flow_name]['directory']) / 'pids' / pathlib.Path("{0}.pid".format(run_uuid)).name
+    try:
+        data = nflib.getRun(flow_name, run_uuid)
+    except Exception as e:
+        print('Error occured getting run info.')
+        print(e)
+        abort(404)
+
+    # Using root_dir
+    pid_filename = pathlib.Path(data[0][11]) / 'pids' / pathlib.Path("{0}.pid".format(run_uuid)).name
     if pid_filename.is_file():
         pid = None
         with open(str(pid_filename)) as f:
