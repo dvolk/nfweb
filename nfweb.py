@@ -73,7 +73,6 @@ def reload_cfg():
     global systemCfg
     systemCfg = dict()    
     for c in cfg.get('system')['contexts']:
-        print(c)
         systemCfg[c['name']] = c
     global flows
     flows = dict()
