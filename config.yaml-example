@@ -1,12 +1,25 @@
+system:
+    contexts:
+        - name: Local
+          prog_dirs: '/home/jez/nextflowPipeines/'
+          root_dirs: '/home/jez/nextflowProjects/'
+        - name: CSSLURM
+          prog_dirs: '/mnt/slurmscratch/nextflowPipelines/'
+          root_dirs: '/mnt/slurmscratch/nextflowProjects/'
+        - name: Azure
+          prog_dirs: '/datadisks/disk1/cifs/code/'
+          root_dirs: '/datadisks/disk1/nfs/projects/'
+
 nextflows:
   - name: "clockwork-remove_contam"
     show: yes
     script: 'nextflow/remove_contam.nf'
-    directory: "/datadisks/disk1/nfs/projects/clockwork-nextgen-remove_contam"
-    prog_directory: '/datadisks/disk1/cifs/code/clockwork-nextgen'
+    directory: "clockwork-nextgen-remove_contam/"
+    prog_directory: 'clockwork-nextgen/'
     description: "Martin Hunt's clockwork pipeline - Remove contamination."
     version: "0.4.0"
     contexts:
+    # Should Really use profiles or other methods of reducing hard coded paths
       - name: Local
         arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_fasta /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/ref.fa --ref_metadata_tsv /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/remove_contam_metadata.tsv --outprefix OUT"
       - name: Azure
@@ -24,11 +37,12 @@ nextflows:
   - name: "clockwork-qc"
     show: yes
     script: 'nextflow/qc.nf'
-    directory: "/datadisks/disk1/nfs/projects/clockwork-nextgen-qc"
-    prog_directory: '/datadisks/disk1/cifs/code/clockwork-nextgen'
+    directory: "clockwork-nextgen-qc/"
+    prog_directory: 'clockwork-nextgen/'
     description: "Martin Hunt's clockwork pipeline - Quality control."
     version: "0.4.0"
     contexts:
+    # Should Really use profiles or other methods of reducing hard coded paths
       - name: Local
         arguments: '-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_fasta /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.NC_000962.3/ref.fa --output_dir qc_out'
       - name: Azure
@@ -46,11 +60,12 @@ nextflows:
   - name: "clockwork-variant_call"
     show: yes
     script: 'nextflow/variant_call.nf'
-    directory: "/datadisks/disk1/nfs/projects/clockwork-nextgen-variant_call"
-    prog_directory: '/datadisks/disk1/cifs/code/clockwork-nextgen'
+    directory: "clockwork-nextgen-variant_call/"
+    prog_directory: 'clockwork-nextgen/'
     description: "Martin Hunt's clockwork pipeline - Variant call."
     version: "0.4.0"
     contexts:
+    # Should Really use profiles or other methods of reducing hard coded paths
       - name: Local
         arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_dir /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.NC_000962.3/ --output_dir variant_call_out --sample_name my_sample"
       - name: Azure
@@ -68,8 +83,8 @@ nextflows:
   - name: "nxtest"
     script: 'test.nf'
     show: yes
-    directory: "/datadisks/disk1/nfs/projects/nxtest"
-    prog_directory: '/datadisks/disk1/cifs/code/nxtest'
+    directory: "nxtest/"
+    prog_directory: 'nxtest/'
     description: "Test example flow from nextflow.io"
     version: "1.0"
     contexts:
@@ -82,6 +97,7 @@ nextflows:
           type: text 
           name: "A single fasta file"
 
+# Unchanged, not sure this would fit with modified format
   - name: "nxtest2"
     script: 'test.nf'
     show: yes
