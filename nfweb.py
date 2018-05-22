@@ -300,9 +300,15 @@ def run_details(flow_name : str, run_uuid: int):
 @app.route('/flow/<flow_name>/log/<run_uuid>')
 @flask_login.login_required
 def show_log(flow_name : str, run_uuid: int):
-    data = nflib.getRun(flow_name, run_uuid)
+    try:
+        data = nflib.getRun(flow_name, run_uuid)
+    except Exception as e:
+        print('Error occured getting run info.')
+        print(e)
+        abort(404)
 
-    log_filename = pathlib.Path(data['root_dir']) / 'maps' / run_uuid / '.nextflow.log'
+    # Using root_dir
+    log_filename = pathlib.Path(data[0][11]) / 'maps' / run_uuid / '.nextflow.log'
     content = None
     with open(str(log_filename)) as f:
         content = f.read()
@@ -312,35 +318,60 @@ def show_log(flow_name : str, run_uuid: int):
 @app.route('/flow/<flow_name>/report/<run_uuid>')
 @flask_login.login_required
 def show_report(flow_name : str, run_uuid: int):
-    data = nflib.getRun(flow_name, run_uuid)
+    try:
+        data = nflib.getRun(flow_name, run_uuid)
+    except Exception as e:
+        print('Error occured getting run info.')
+        print(e)
+        abort(404)
 
-    report_filename = pathlib.Path(data['root_dir']) / 'maps' / run_uuid / 'report.html'
+    # Using root_dir
+    report_filename = pathlib.Path(data[0][11]) / 'maps' / run_uuid / 'report.html'
     with open(str(report_filename)) as f:
         return f.read()
 
 @app.route('/flow/<flow_name>/timeline/<run_uuid>')
 @flask_login.login_required
 def show_timeline(flow_name: str, run_uuid: int):
-    data = getRun(flow_name, run_uuid)
-    timeline_filename = pathlib.Path(data['root_dir']) / 'maps' / run_uuid / 'timeline.html'
+    try:
+        data = nflib.getRun(flow_name, run_uuid)
+    except Exception as e:
+        print('Error occured getting run info.')
+        print(e)
+        abort(404)
+
+    # Using root_dir
+    timeline_filename = pathlib.Path(data[0][11]) / 'maps' / run_uuid / 'timeline.html'
     with open(str(timeline_filename)) as f:
         return f.read()
 
 @app.route('/flow/<flow_name>/dagdot/<run_uuid>')
 @flask_login.login_required
 def show_dagdot(flow_name: str, run_uuid: int):
-    data = nflib.getRun(flow_name, run_uuid)
+    try:
+        data = nflib.getRun(flow_name, run_uuid)
+    except Exception as e:
+        print('Error occured getting run info.')
+        print(e)
+        abort(404)
 
-    dagdot_filename = pathlib.Path(data['root_dir']) / 'maps' / run_uuid / 'dag.dot'
+    # Using root_dir
+    dagdot_filename = pathlib.Path(data[0][11]) / 'maps' / run_uuid / 'dag.dot'
     with open(str(dagdot_filename)) as f:
         return f.read()
 
 @app.route('/flow/<flow_name>/stop/<run_uuid>')
 @flask_login.login_required
 def kill_nextflow(flow_name : str, run_uuid: int):
-    data = nflib.getRun(flow_name, run_uuid)
+    try:
+        data = nflib.getRun(flow_name, run_uuid)
+    except Exception as e:
+        print('Error occured getting run info.')
+        print(e)
+        abort(404)
 
-    pid_filename = pathlib.Path(data['root_dir']) / 'pids' / pathlib.Path("{0}.pid".format(run_uuid)).name
+    # Using root_dir
+    pid_filename = pathlib.Path(data[0][11]) / 'pids' / pathlib.Path("{0}.pid".format(run_uuid)).name
     if pid_filename.is_file():
         pid = None
         with open(str(pid_filename)) as f:
