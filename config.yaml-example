@@ -14,8 +14,8 @@ nextflows:
   - name: "clockwork-remove_contam"
     show: yes
     script: 'nextflow/remove_contam.nf'
-    directory: "clockwork-nextgen-remove_contam/"
-    prog_directory: 'clockwork-nextgen/'
+    root_dir: "clockwork-nextgen-remove_contam/"
+    prog_dir: 'clockwork-nextgen/'
     description: "Martin Hunt's clockwork pipeline - Remove contamination."
     version: "0.4.0"
     contexts:
@@ -37,8 +37,8 @@ nextflows:
   - name: "clockwork-qc"
     show: yes
     script: 'nextflow/qc.nf'
-    directory: "clockwork-nextgen-qc/"
-    prog_directory: 'clockwork-nextgen/'
+    root_dir: "clockwork-nextgen-qc/"
+    prog_dir: 'clockwork-nextgen/'
     description: "Martin Hunt's clockwork pipeline - Quality control."
     version: "0.4.0"
     contexts:
@@ -60,8 +60,8 @@ nextflows:
   - name: "clockwork-variant_call"
     show: yes
     script: 'nextflow/variant_call.nf'
-    directory: "clockwork-nextgen-variant_call/"
-    prog_directory: 'clockwork-nextgen/'
+    root_dir: "clockwork-nextgen-variant_call/"
+    prog_dir: 'clockwork-nextgen/'
     description: "Martin Hunt's clockwork pipeline - Variant call."
     version: "0.4.0"
     contexts:
@@ -83,8 +83,8 @@ nextflows:
   - name: "nxtest"
     script: 'test.nf'
     show: yes
-    directory: "nxtest/"
-    prog_directory: 'nxtest/'
+    root_dir: "nxtest/"
+    prog_dir: 'nxtest/'
     description: "Test example flow from nextflow.io"
     version: "1.0"
     contexts:
@@ -101,8 +101,8 @@ nextflows:
   - name: "nxtest2"
     script: 'test.nf'
     show: yes
-    directory: "/tmp/nxtest"
-    prog_directory: '/home/ndm.local/denisv/nxtest'
+    root_dir: "/tmp/nxtest"
+    prog_dir: '/home/ndm.local/denisv/nxtest'
     description: "Test example flow from nextflow.io"
     version: "1.0"
     contexts:
@@ -113,13 +113,13 @@ nextflows:
       description:
         - position: 0 
           type: text
-          "A single fasta file"
+          name: "A single fasta file"
         - position: 1
           type: text
-          "Another single fasta file"
+          name: "Another single fasta file"
         - position: 2
           type: text
-          "A third single fasta file"
+          name: "A third single fasta file"
 
 
 users:
