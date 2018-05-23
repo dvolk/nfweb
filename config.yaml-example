@@ -30,7 +30,7 @@ nextflows:
         - position: 0
           type: text
           name: "File 1"
-        - position: 0
+        - position: 1
           type: text
           name: "File 2"
 
@@ -53,7 +53,7 @@ nextflows:
         - position: 0
           type: text
           name: "File 1"
-        - position: 0
+        - position: 1
           type: text
           name: "File 2"
 
@@ -76,7 +76,7 @@ nextflows:
         - position: 0
           type: text
           name: "File 1"
-        - position: 0
+        - position: 1
           type: text
           name: "File 2"
 
