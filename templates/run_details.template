@@ -1,6 +1,8 @@
 {% extends "base1.template" %}
 {% block content %}
 <h2>{{ uuid }}</h2>
+<h5>Output directory: {{ output_dir }}</h5>
+
 <div class="container">
   {% if buttons['log'] %}<a href="/flow/{{ flow_name }}/log/{{ uuid }}"><button type="button" class="btn btn-info">View log</button></a>{% endif %}
   {% if buttons['report'] %}<a href="/flow/{{ flow_name }}/report/{{ uuid }}"><button type="button" class="btn btn-primary">View report</button></a>{% endif %}
