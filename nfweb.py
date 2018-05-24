@@ -101,7 +101,7 @@ def status():
 def is_admin():
     return 'admin' in users[flask_login.current_user.id]['capabilities']
 
-@app.route('/userinfo/<username>')
+@app.route('/userinfo/<username>', methods=['GET', 'POST'])
 @flask_login.login_required
 def userinfo(username: str):
     is_same = username == flask_login.current_user.id
@@ -110,7 +110,18 @@ def userinfo(username: str):
     if (not is_same and not is_admin()) or not username_exists:
         return redirect('/')
 
-    return render_template('userinfo.template', userinfo=users[username])
+    if request.method == "POST":
+        cur_pw = request.form['currentpassword']
+        new_pw1 = request.form['newpassword']
+        new_pw2 = request.form['newpassword2']
+        password_hash = users[username]['password']
+        if bcrypt.verify(cur_pw, password_hash):
+            if new_pw1 == new_pw2:
+                pass
+                flask_login.logout_user()
+        return redirect('/')
+    else:
+        return render_template('userinfo.template', userinfo=users[username])
 
 @app.route('/admin', methods=['GET', 'POST'])
 @flask_login.login_required
