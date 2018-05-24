@@ -1,6 +1,11 @@
 {% extends 'base1.template' %}
 
 {% block content %}
+
+<h1>User info</h1>
+
+<h2>Table</h2>
+
 <table class="table table-hover table-sm">
 <thead>
 <th>Key</th>
@@ -8,11 +13,47 @@
 </thead>
 <tbody>
 {% for k,v in userinfo.items() %}
+{% if k != "password" %}
 <tr>
   <td>{{ k }}</td>
   <td>{{ v }}</td>
   </tr>
+  {% endif %}
 {% endfor %}
-  </tbody>
-  </table>
+</tbody>
+</table>
+
+<h2>Update password</h2>
+
+<div class="col col-6" style="padding: 0px">
+
+<form action="/userinfo/{{ userinfo['name'] }}" method=POST>
+
+  <div class="input-group mb-3">
+    <div class="input-group-prepend">
+      <span class="input-group-text" id="basic-addon1">Current password</span>
+    </div>
+    <input name="currentpassword" class="form-control" aria-label="current password" aria-describedby="basic-addon1">
+  </div>
+
+  <div class="input-group mb-3">
+    <div class="input-group-prepend">
+      <span class="input-group-text" id="basic-addon1">New password</span>
+    </div>
+    <input name="newpassword" class="form-control" aria-label="new password" aria-describedby="basic-addon1">
+  </div>
+
+  <div class="input-group mb-3">
+    <div class="input-group-prepend">
+      <span class="input-group-text" id="basic-addon1">Confirm new password</span>
+    </div>
+    <input name="newpassword2" class="form-control" aria-label="confirm new password" aria-describedby="basic-addon1">
+  </div>
+
+
+<button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+</div>
+
 {% endblock %}
