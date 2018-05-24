@@ -109,6 +109,7 @@ def run_nextflow(queue):
     print("thread waiting for nextflow")
     ret = P.wait()
     print("nextflow process terminated with code {0}".format(ret))
+    queue.put(ret)
 
 T = threading.Thread(target=run_nextflow, args=(q,))
 T.start()
@@ -191,14 +192,16 @@ nflib.insertRun(s, uuid, oldpwd)
 
 # wait for nextflow to finish
 T.join()
+nf_returncode = str(q.get())
 
 # remove pid file
 os.remove(str(pathlib.Path('pids') / "{0}.pid".format(internal_uuid)))
 
 # update sqlite database with the end results
 hist = nflib.parseHistoryFile(run_dir / '.nextflow' / 'history')
-s = tuple(list(hist[0])) + other
-end_epochtime = str(int(time.time()))
+hist = list(hist[0])
+if nf_returncode != "0":
+    hist[3] = "ERR"
 other = (user,
          sample_group,
          workflow,
@@ -210,6 +213,8 @@ other = (user,
          pid,
          ppid,
          end_epochtime)
+s = tuple(hist) + other
+end_epochtime = str(int(time.time()))
 nflib.reinsertRun(s, uuid, internal_uuid, oldpwd)
 
 # go back to the old directory
