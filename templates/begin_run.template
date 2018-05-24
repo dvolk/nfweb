@@ -2,7 +2,7 @@
 {% block content %}
 
 <h5>Create new run for {{ flow['name'] }}</h5>
-<p>Working directory: {{ contextcfg['run_dir'] }}</p>
+<p>Working directory: {{ contextcfg['root_dir'] }}</p>
 
 <form action='/flow/{{ flow['name'] }}/new' method='POST'>
   <div class="input-group mb-3">
@@ -15,6 +15,7 @@
       {% endfor %}
     </select>
   </div>
+
   {% for input in incfg['description'] %}
   <div class="input-group mb-3">
     <div class="input-group-prepend">
@@ -23,6 +24,13 @@
     <input name="nfwebparaminput{{ input['position'] }}" type={{ input['type'] }} class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
   </div>
   {% endfor %}
+
+  <div class="input-group mb-3">
+    <div class="input-group-prepend">
+      <span class="input-group-text" id="basic-addon1">Output directory</span>
+    </div>
+    <input name="nfwebparamoutput" type=text class="form-control" aria-label="Output directory" aria-describedby="basic-addon1">
+  </div>
 
   <button type="submit" class="btn btn-primary">Submit</button>
 </form>

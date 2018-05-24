@@ -16,6 +16,7 @@ nextflows:
     show: yes
     root_dir: "nxtest/"
     prog_dir: 'nxtest/'
+    output_dir: "output/"
     description: "Test example flow from nextflow.io"
     version: "1.0"
     contexts:
@@ -27,6 +28,8 @@ nextflows:
         - position: 0 
           type: text 
           name: "A single fasta file"
+    output:
+        parameter: "--output_dir"
 
 users:
   - name: "compass"

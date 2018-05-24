@@ -49,6 +49,7 @@ root_dir = pathlib.Path(data['root_dir'])
 prog_dir = pathlib.Path(data['prog_dir'])
 arguments = data['arguments']
 input_str = data['input_str']
+output_str = data['output_str']
 user = data['user']
 sample_group = data['sample_group']
 workflow = data['workflow']
@@ -82,7 +83,7 @@ q = queue.Queue()
 
 # This functions runs nextflow, returns the nxtflow pid to the main thread and wait until nextflow finishes
 def run_nextflow(queue):
-    cmd = "nextflow {0} -w {1}/SCRATCH -with-trace -with-report -with-timeline -with-dag {2} {3}".format(nf_filename.name, root_dir, arguments, input_str)
+    cmd = "nextflow {0} -w {1}/SCRATCH -with-trace -with-report -with-timeline -with-dag {2} {3} {4}".format(nf_filename.name, root_dir, arguments, input_str, output_str)
     print("nextflow cmdline: {0}".format(cmd))
     P = subprocess.Popen(shlex.split(cmd))
     ppid = os.getpid()
@@ -162,11 +163,13 @@ os.symlink(str(run_dir / 'trace.txt'), str(pathlib.Path('traces') / "{0}.trace".
 #  9 sample_group
 # 10 workflow
 # 11 context
-# 12 run_uuid primary key not null
-# 13 start_epochtime
-# 14 pid
-# 15 ppid
-# 16 end_epochtime
+# 12 root_dir
+# 13 output_dir
+# 14 4run_uuid primary key not null
+# 15 start_epochtime
+# 16 pid
+# 17 ppid
+# 18 end_epochtime
 
 end_epochtime = str(int(time.time()))
 hist = nflib.parseHistoryFile(run_dir / '.nextflow' / 'history')
@@ -175,6 +178,7 @@ other = (user,
          workflow,
          context,
          str(root_dir),
+         output_str,
          uuid,
          start_epochtime,
          pid,
@@ -200,6 +204,7 @@ other = (user,
          workflow,
          context,
          str(root_dir),
+         output_str,
          uuid,
          start_epochtime,
          pid,
