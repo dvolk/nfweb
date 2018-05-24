@@ -11,85 +11,6 @@ system:
           root_dirs: '/datadisks/disk1/nfs/projects/'
 
 nextflows:
-  - name: "clockwork-remove_contam"
-    show: yes
-    script: 'nextflow/remove_contam.nf'
-    root_dir: "clockwork-nextgen-remove_contam/"
-    prog_dir: 'clockwork-nextgen/'
-    output_dir: 'output/'
-    description: "Martin Hunt's clockwork pipeline - Remove contamination."
-    version: "0.4.0"
-    contexts:
-    # Should Really use profiles or other methods of reducing hard coded paths
-      - name: Local
-        arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_fasta /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/ref.fa --ref_metadata_tsv /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/remove_contam_metadata.tsv"
-      - name: Azure
-        arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_fasta /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/ref.fa --ref_metadata_tsv /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.remove_contam/remove_contam_metadata.tsv -profile azure -process.executor ignite -cluster.maxCpus 0 -cluster.join path:/datadisks/disk1/cifs/cluster -resume"
-    input:
-      argf: "--reads_in1 {0} --reads_in2 {1}"
-      description: 
-        - position: 0
-          type: text
-          name: "File 1"
-        - position: 1
-          type: text
-          name: "File 2"
-    output:
-        # Unsure if this will still work
-        parameter: "--outprefix OUT"
-
-  - name: "clockwork-qc"
-    show: yes
-    script: 'nextflow/qc.nf'
-    root_dir: "clockwork-nextgen-qc/"
-    prog_dir: 'clockwork-nextgen/'
-    output_dir: 'qc_out/'
-    description: "Martin Hunt's clockwork pipeline - Quality control."
-    version: "0.4.0"
-    contexts:
-    # Should Really use profiles or other methods of reducing hard coded paths
-      - name: Local
-        arguments: '-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_fasta /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.NC_000962.3/ref.fa'
-      - name: Azure
-        arguments: '-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_fasta /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.NC_000962.3/ref.fa -profile azure -process.executor ignite -cluster.maxCpus 0 -cluster.join path:/datadisks/disk1/cifs/cluster -resume'
-    input:
-      argf: "--reads_in1 {0} --reads_in2 {1}"
-      description:
-        - position: 0
-          type: text
-          name: "File 1"
-        - position: 1
-          type: text
-          name: "File 2"
-    output:
-        parameter: "--output_dir"
-
-  - name: "clockwork-variant_call"
-    show: yes
-    script: 'nextflow/variant_call.nf'
-    root_dir: "clockwork-nextgen-variant_call/"
-    prog_dir: 'clockwork-nextgen/'
-    output_dir: 'variant_call_out/'
-    description: "Martin Hunt's clockwork pipeline - Variant call."
-    version: "0.4.0"
-    contexts:
-    # Should Really use profiles or other methods of reducing hard coded paths
-      - name: Local
-        arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_dir /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.NC_000962.3/ --sample_name my_sample"
-      - name: Azure
-        arguments: "-with-singularity /datadisks/disk1/cifs/code/clockwork-nextgen/clockwork_container.img --ref_dir /datadisks/disk1/cifs/code/clockwork-nextgen/Reference.NC_000962.3/ --sample_name my_sample -profile azure -process.executor ignite -cluster.maxCpus 0 -cluster.join path:/datadisks/disk1/cifs/cluster -resume"
-    input:
-      argf: "--reads_in1 {0} --reads_in2 {1}"
-      description:
-        - position: 0
-          type: text
-          name: "File 1"
-        - position: 1
-          type: text
-          name: "File 2"
-    output:
-        parameter: "--output_dir"
-
   - name: "nxtest"
     script: 'test.nf'
     show: yes
@@ -107,33 +28,6 @@ nextflows:
         - position: 0 
           type: text 
           name: "A single fasta file"
-    output:
-        parameter: "--output_dir"
-
-# Unchanged, not sure this would fit with modified format
-  - name: "nxtest2"
-    script: 'test.nf'
-    show: yes
-    root_dir: "/tmp/nxtest"
-    prog_dir: '/home/ndm.local/denisv/nxtest'
-    output_dir: 'output/'
-    description: "Test example flow from nextflow.io"
-    version: "1.0"
-    contexts:
-      - name: Local
-        arguments: ""
-    input:
-      argf: "--in_fasta {0} {1} {2}"
-      description:
-        - position: 0 
-          type: text
-          name: "A single fasta file"
-        - position: 1
-          type: text
-          name: "Another single fasta file"
-        - position: 2
-          type: text
-          name: "A third single fasta file"
     output:
         parameter: "--output_dir"
 
