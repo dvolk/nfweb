@@ -21,7 +21,15 @@
     <div class="input-group-prepend">
       <span class="input-group-text" id="basic-addon1">{{ input['name'] }}</span>
     </div>
+    {% if input['type'] == 'text' %}
     <input name="nfwebparaminput{{ input['position'] }}" type={{ input['type'] }} class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
+    {% elif input['type'] == 'list' %}
+    <select name="nfwebparaminput{{ input['position'] }}" class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
+      {% for option in input['options']  %}
+        <option value="{{ option['option'] }}">{{ option['option'] }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
   </div>
   {% endfor %}
 

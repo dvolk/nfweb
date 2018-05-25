@@ -23,11 +23,17 @@ nextflows:
       - name: Local
         arguments: ""
     input:
-      argf: "--in_fasta {0}"
+      argf: "--in_fasta {0} --species"
       description:
         - position: 0 
           type: text 
           name: "A single fasta file"
+        - position: 1
+          type: list
+          options:
+          - option: 'tb'
+          - option: 'staph'
+          name: 'Species'
     output:
         parameter: "--output_dir"
 
