@@ -208,16 +208,22 @@ def begin_run(flow_name: str):
         else:
             prog_dir = flow_cfg['prog_dir']
 
-        # get the form user inputs
+        # get the form user inputs and use them to format the input and output string
         vs = list()
         for key in sorted(request.form.keys()):
             if key[0:15] == 'nfwebparaminput':
-                vs.append(request.form[key])
+                for inputArg in flow_input_cfg['description']:
+                    if inputArg['name'] == key[16:]:
+                        if inputArg['type'] == 'text' or inputArg['type'] == 'list':
+                            vs.append("{0} {1}".format(inputArg['arg'], request.form[key]))
+                        elif inputArg['type'] == 'switch' and request.form[key] == 'True':
+                            vs.append(inputArg['arg'])
+                    
             elif key[0:16] == 'nfwebparamoutput':
                 output_str = "{0} {1}".format( flow_output_cfg['parameter'] , root_dir + flow_cfg['output_dir'] + flask_login.current_user.id + "/" + request.form[key])
 
-        print(len(vs), flow_input_cfg['description'])
-        if len(vs) < len(flow_input_cfg['description']):
+        print(len(vs), flow_input_cfg)
+        if len(vs) < flow_input_cfg['minargs']:
             return redirect("/flow/{0}/new".format(flow_name))
 
         run_uuid = str(uuid.uuid4())
@@ -233,7 +239,7 @@ def begin_run(flow_name: str):
             # static arguments to nextflow
             'arguments' : run_context_dict[context]['arguments'],
             # user arguments to nextflow
-            'input_str' : flow_input_cfg['argf'].format(*vs),
+            'input_str' : ' '.join(vs),
             # string to define what to do with outputs
             'output_str' : output_str,
             # web user id that started the run

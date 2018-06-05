@@ -17,21 +17,38 @@
   </div>
 
   {% for input in incfg['description'] %}
-  <div class="input-group mb-3">
-    <div class="input-group-prepend">
-      <span class="input-group-text" id="basic-addon1">{{ input['name'] }}</span>
-    </div>
+    {% if not input['type'] == 'switch' %}
+      <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">{{ input['desc'] }}</span>
+      </div>
+    {% endif %}
     {% if input['type'] == 'text' %}
-    <input name="nfwebparaminput{{ input['position'] }}" type={{ input['type'] }} class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
+    <input name="nfwebparaminput-{{ input['name'] }}" type={{ input['type'] }} class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
     {% elif input['type'] == 'list' %}
-    <select name="nfwebparaminput{{ input['position'] }}" class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
+    <select name="nfwebparaminput-{{ input['name'] }}" class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
       {% for option in input['options']  %}
         <option value="{{ option['option'] }}">{{ option['option'] }}</option>
       {% endfor %}
     </select>
     {% endif %}
-  </div>
+    {% if not input['type'] == 'switch' %}
+      </div>
+    {% endif %}
   {% endfor %}
+
+  <div class="input-group mb-3">
+    {% for input in incfg['description'] %}
+      {% if input['type'] == 'switch' %}
+        <div class="input-group-prepend">
+          <span class="input-group-text" id="basic-addon1">{{ input['desc'] }}</span>
+        </div>
+        <input name="nfwebparaminput-{{ input['name'] }}" type="checkbox" value="True" class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
+      {% endif %}
+    {% endfor %}
+  </div>
+
+
 
   <div class="input-group mb-3">
     <div class="input-group-prepend">
