@@ -1,6 +1,6 @@
 {% extends "base1.template" %}
 {% block content %}
-<h2>{{ uuid }}</h2>
+<h2>{{ flow_name  }} - Run ID {{ uuid }}</h2>
 <h5>Output directory: {{ output_dir }}</h5>
 
 <div class="container">
