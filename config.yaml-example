@@ -23,8 +23,13 @@ nextflows:
       - name: Local
         arguments: ""
     input:
+<<<<<<< config.yaml-example
+      # Number of compulsory argumnets (IE Total arguments - switches) - Currently unused
+      # minargs: 2
+=======
       # Number of compulsory argumnets (IE Total arguments - switches)
       minargs: 2
+>>>>>>> config.yaml-example
       description:
         # name: name of argument to be appended to nfwebparaminput
         # arg: switch in nextflow
@@ -33,7 +38,11 @@ nextflows:
         # desc: Description for the run page
         - name: 'infile'
           arg: "--in_fasta"
+<<<<<<< config.yaml-example
+          type: input-reqr
+=======
           type: text 
+>>>>>>> config.yaml-example
           desc: "A single fasta file"
         - name: 'species'
           arg: "--species"

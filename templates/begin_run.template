@@ -16,34 +16,52 @@
     </select>
   </div>
 
-  {% for input in incfg['description'] %}
-    {% if not input['type'] == 'switch' %}
+  {% for param in paramcfg['description'] %}
+    {% if param['type'] == 'input-list' %}
       <div class="input-group mb-3">
       <div class="input-group-prepend">
-        <span class="input-group-text" id="basic-addon1">{{ input['desc'] }}</span>
+        <span class="input-group-text" id="basic-addon1">
+          {{ param['desc'] }}
+        </span>
+        <select name="nfwebparam-input-list-{{ param['name'] }}" class="form-control" aria-label="{{ param['name'] }}" aria-describedby="basic-addon1">
+          
+        {% for option in param['options']  %}
+          <option value="{{ option['option'] }}">{{ option['option'] }}</option>
+        {% endfor %}
+        </select>
+        
+      </div>
+    {% elif not param['type'] == 'switch' %}
+      <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="basic-addon1">{{ param['desc'] }}</span>
       </div>
     {% endif %}
-    {% if input['type'] == 'text' %}
-    <input name="nfwebparaminput-{{ input['name'] }}" type={{ input['type'] }} class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
-    {% elif input['type'] == 'list' %}
-    <select name="nfwebparaminput-{{ input['name'] }}" class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
-      {% for option in input['options']  %}
+
+    {% if param['type'] == 'input-reqr' or param['type'] == 'input-list' %}
+      <input name="nfwebparam-input-text-{{ param['name'] }}" type={{ param['type'] }} class="form-control" aria-label="{{ param['name'] }}" aria-describedby="basic-addon1">
+    {% elif param['type'] == 'text' %}
+      <input name="nfwebparam-{{ param['name'] }}" type={{ param['type'] }} class="form-control" aria-label="{{ param['name'] }}" aria-describedby="basic-addon1">
+    {% elif param['type'] == 'list' %}
+      <select name="nfwebparam-{{ param['name'] }}" class="form-control" aria-label="{{ param['name'] }}" aria-describedby="basic-addon1">
+      {% for option in param['options']  %}
         <option value="{{ option['option'] }}">{{ option['option'] }}</option>
       {% endfor %}
     </select>
     {% endif %}
-    {% if not input['type'] == 'switch' %}
+
+    {% if not param['type'] == 'switch' %}
       </div>
     {% endif %}
   {% endfor %}
 
   <div class="input-group mb-3">
-    {% for input in incfg['description'] %}
-      {% if input['type'] == 'switch' %}
+    {% for param in paramcfg['description'] %}
+      {% if param['type'] == 'switch' %}
         <div class="input-group-prepend">
-          <span class="input-group-text" id="basic-addon1">{{ input['desc'] }}</span>
+          <span class="input-group-text" id="basic-addon1">{{ param['desc'] }}</span>
         </div>
-        <input name="nfwebparaminput-{{ input['name'] }}" type="checkbox" value="True" class="form-control" aria-label="{{ input['name'] }}" aria-describedby="basic-addon1">
+        <input name="nfwebparam-{{ param['name'] }}" type="checkbox" value="True" class="form-control" aria-label="{{ param['name'] }}" aria-describedby="basic-addon1">
       {% endif %}
     {% endfor %}
   </div>
@@ -52,9 +70,9 @@
 
   <div class="input-group mb-3">
     <div class="input-group-prepend">
-      <span class="input-group-text" id="basic-addon1">Output directory</span>
+      <span class="input-group-text" id="basic-addon1">Project Name</span>
     </div>
-    <input name="nfwebparamoutput" type=text class="form-control" aria-label="Output directory" aria-describedby="basic-addon1">
+    <input name="nfwebparam-output" type=text class="form-control" aria-label="Project Name" aria-describedby="basic-addon1">
   </div>
 
   <button type="submit" class="btn btn-primary">Submit</button>

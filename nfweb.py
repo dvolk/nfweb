@@ -8,6 +8,7 @@ import shlex
 import uuid
 import os
 import signal
+from collections import deque
 
 from flask import Flask, request, render_template, redirect, abort, url_for
 import flask_login
@@ -168,7 +169,7 @@ def list_flows():
 def begin_run(flow_name: str):
     if request.method == 'GET':
         flow_cfg = flows[flow_name]
-        flow_input_cfg = flow_cfg['input']
+        flow_param_cfg = flow_cfg['param']
 
         run_context_dict = dict()
         for c in flow_cfg['contexts']:
@@ -186,11 +187,11 @@ def begin_run(flow_name: str):
             else:
                 run_context_dict[c['name']]['prog_dir'] = flow_cfg['prog_dir']
 
-        return render_template('begin_run.template', flow=flow_cfg, incfg=flow_input_cfg, contextcfg=run_context_dict)
+        return render_template('begin_run.template', flow=flow_cfg, paramcfg=flow_param_cfg, contextcfg=run_context_dict)
 
     elif request.method == 'POST':
         flow_cfg = flows[flow_name]
-        flow_input_cfg = flow_cfg['input']
+        flow_param_cfg = flow_cfg['param']
         flow_output_cfg = flow_cfg['output']
         context = request.form['context']
 
@@ -209,23 +210,46 @@ def begin_run(flow_name: str):
             prog_dir = flow_cfg['prog_dir']
 
         # get the form user inputs and use them to format the input and output string
-        vs = list()
+        vs = deque([])
+        inputs = dict()
         for key in sorted(request.form.keys()):
-            if key[0:15] == 'nfwebparaminput':
-                for inputArg in flow_input_cfg['description']:
-                    if inputArg['name'] == key[16:]:
-                        if inputArg['type'] == 'text' or inputArg['type'] == 'list':
-                            vs.append("{0} {1}".format(inputArg['arg'], request.form[key]))
-                        elif inputArg['type'] == 'switch' and request.form[key] == 'True':
-                            vs.append(inputArg['arg'])
-                    
-            elif key[0:16] == 'nfwebparamoutput':
-                output_str = "{0} {1}".format( flow_output_cfg['parameter'] , root_dir + flow_cfg['output_dir'] + flask_login.current_user.id + "/" + request.form[key])
+            if key[0:10] == 'nfwebparam':
+                if key[11:16] == 'input':
+                    if key[17:21] == 'text':
+                        if key[22:] in inputs:
+                            inputs[key[22:]][1] = request.form[key]
+                        else:
+                            inputs[key[22:]] = ["", request.form[key]]
 
-        print(len(vs), flow_input_cfg)
-        if len(vs) < flow_input_cfg['minargs']:
-            return redirect("/flow/{0}/new".format(flow_name))
+                    else:
+                        if key[22:] in vs:
+                            inputs[key[22:]][0] = request.form[key]
+                        else:
+                            inputs[key[22:]] = [request.form[key], ""]
 
+                elif key[11:17] == 'output':
+                    output_arg = flow_output_cfg['parameter'] 
+                    output_dir = root_dir + flow_cfg['output_dir'] + flask_login.current_user.id + "/" + request.form[key]
+                else:
+                    for param in flow_param_cfg['description']:
+                        if param['name'] == key[11:]:
+                            if param['type'] == 'text' or param['type'] == 'list':
+                                vs.append("{0} {1}".format(param['arg'], request.form[key]))
+                            elif param['type'] == 'switch' and request.form[key] == 'True':
+                                vs.append(param['arg'])
+
+        for inputKey, inputValues in inputs.items():
+            for inputInfo in flow_param_cfg['description']:
+                if inputInfo['name'] == inputKey:
+                    if inputInfo['type'] == 'input-reqr':
+                        vs.appendleft("{0} {1}".format(inputInfo['arg'], inputValues[1]))
+                    else:
+                        for option in inputInfo['options']:
+                            if option['option'] == inputValues[0]:
+                                vs.appendleft("{0} {1}".format(option['arg'], inputValues[1]))
+
+#        if len(vs) < flow_param_cfg['minargs']:
+#        return redirect("/flow/{0}/new".format(flow_name))
         run_uuid = str(uuid.uuid4())
 
         # all the data that is passed to go.py (which starts nextflow)
@@ -240,8 +264,10 @@ def begin_run(flow_name: str):
             'arguments' : run_context_dict[context]['arguments'],
             # user arguments to nextflow
             'input_str' : ' '.join(vs),
-            # string to define what to do with outputs
-            'output_str' : output_str,
+            # output argument to use
+            'output_arg' : output_arg,
+            # output directory
+            'output_dir' : output_dir,
             # web user id that started the run
             'user': flask_login.current_user.id,
             # nfweb run uuid (not to be confused with the uuid generated by nextflow)
@@ -292,7 +318,7 @@ def run_details(flow_name : str, run_uuid: int):
     data = nflib.getRun(flow_name, run_uuid)
     # root_dir is entry 11
     nf_directory = pathlib.Path(data[0][11])
-    output_dir = data[0][12]
+    output_dir = data[0][13]
 
     buttons = { }
     pid_filename = nf_directory / 'pids' / "{0}.pid".format(run_uuid)

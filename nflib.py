@@ -44,7 +44,7 @@ def getDBConn(pwd : pathlib.Path = pathlib.Path.cwd()):
     # nfweb.sqlite nfruns table is used for tracking nextflow runs
     pwd = pwd / 'nfweb.sqlite'
     con = sqlite3.connect(str(pwd) ,check_same_thread=False)
-    con.execute("CREATE TABLE if not exists nfruns (date_time, duration, code_name, status, hash, uuid, command_line, user, sample_group, workflow, context, root_dir, output_dir, run_uuid primary key not null, start_epochtime, pid, ppid, end_epochtime);")
+    con.execute("CREATE TABLE if not exists nfruns (date_time, duration, code_name, status, hash, uuid, command_line, user, sample_group, workflow, context, root_dir, output_arg, output_dir, run_uuid primary key not null, start_epochtime, pid, ppid, end_epochtime);")
     con.commit()
     return con
 
@@ -89,10 +89,10 @@ def insertDummyRun(data: dict, db_dir: pathlib.Path = pathlib.Path.cwd()):
     # insert a dummy entry into the table so that the user sees that a run is starting
     # this is replaced when the nextflow process starts
     con = getDBConn(db_dir)
-    con.execute('insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+    con.execute('insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                (time.strftime("%Y-%m-%d %H:%M:%S"), '-', '-', 'STARTING', '-', 
                '-', '-', data['user'], data['sample_group'], data['workflow'], 
-               data['context'], data['root_dir'], data['output_str'], data['run_uuid'], 
+               data['context'], data['root_dir'], data['output_arg'], data['output_dir'], data['run_uuid'], 
                str(int(time.time())), '-', '-', str(int(time.time()))))
     con.commit()
     closeDBConn(con)
@@ -104,7 +104,7 @@ def insertRun(s: list, uuid: int, db_dir: pathlib.Path = pathlib.Path.cwd()):
     print ("deleting dummy run")
     con.execute("delete from nfruns where run_uuid = ?", (uuid,))
     print ("entering actual run")
-    con.execute("insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s)
+    con.execute("insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s)
     con.commit()
     closeDBConn(con)
 
@@ -112,7 +112,7 @@ def reinsertRun(s: list, uuid: int, internal_uuid: int, db_dir: pathlib.Path = p
     # update sqlite database with the end results
     con = getDBConn(db_dir)
     con.execute("delete from nfruns where uuid = ?", (internal_uuid,))
-    con.execute("insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s)
+    con.execute("insert into nfruns values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", s)
     con.commit()
     closeDBConn(con)
 
