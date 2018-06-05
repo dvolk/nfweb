@@ -1,7 +1,7 @@
 system:
     contexts:
         - name: Local
-          prog_dirs: '/home/jez/nextflowPipeines/'
+          prog_dirs: '/home/jez/nextflowPipelines/'
           root_dirs: '/home/jez/nextflowProjects/'
         - name: CSSLURM
           prog_dirs: '/mnt/slurmscratch/nextflowPipelines/'
@@ -23,17 +23,25 @@ nextflows:
       - name: Local
         arguments: ""
     input:
-      argf: "--in_fasta {0} --species"
+      # Number of compulsory argumnets (IE Total arguments - switches)
+      minargs: 2
       description:
-        - position: 0 
+        # name: name of argument to be appended to nfwebparaminput
+        # arg: switch in nextflow
+        # type: text, list or switch
+        # options: if a list an option for each selection
+        # desc: Description for the run page
+        - name: 'infile'
+          arg: "--in_fasta"
           type: text 
-          name: "A single fasta file"
-        - position: 1
+          desc: "A single fasta file"
+        - name: 'species'
+          arg: "--species"
           type: list
           options:
           - option: 'tb'
           - option: 'staph'
-          name: 'Species'
+          desc: 'Species'
     output:
         parameter: "--output_dir"
 
