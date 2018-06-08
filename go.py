@@ -61,6 +61,7 @@ run_dir = root_dir / "runs" / uuid
 print(run_dir)
 
 os.makedirs(str(run_dir), exist_ok=True)
+os.makedirs(str(output_dir), exist_ok=True)
 
 # Copy nextflow file to the run dir
 shutil.copy2(str(prog_dir / nf_filename), str(run_dir))
