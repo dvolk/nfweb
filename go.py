@@ -64,16 +64,16 @@ os.makedirs(str(run_dir), exist_ok=True)
 os.makedirs(str(output_dir), exist_ok=True)
 
 # Copy nextflow file to the run dir
-shutil.copy2(str(prog_dir / nf_filename), str(run_dir))
+#shutil.copy2(str(prog_dir / nf_filename), str(run_dir))
 
 # Copy the profile to the run dir. Search for the profile in the prog_dir and prog_dir/nextflow
-try:
-    shutil.copy2(str(prog_dir / 'nextflow.config'), str(run_dir))
-except:
-    try:
-        shutil.copy2(str(prog_dir / 'nextflow' / 'nextflow.config'), str(run_dir))
-    except:
-        print("No nextflow.config found")
+#try:
+#    shutil.copy2(str(prog_dir / 'nextflow.config'), str(run_dir))
+#except:
+#    try:
+#        shutil.copy2(str(prog_dir / 'nextflow' / 'nextflow.config'), str(run_dir))
+#    except:
+#        print("No nextflow.config found")
 
 # Cache the current directory and then change into the run directory.
 oldpwd = pathlib.Path.cwd()
@@ -85,7 +85,7 @@ q = queue.Queue()
 
 # This functions runs nextflow, returns the nxtflow pid to the main thread and wait until nextflow finishes
 def run_nextflow(queue):
-    cmd = "nextflow {0} -w {1}/SCRATCH -with-trace -with-report -with-timeline -with-dag {2} {3} {4} {5}".format(nf_filename.name, root_dir, arguments, input_str, output_arg, output_dir)
+    cmd = "nextflow {0}/{1} -w {2}/SCRATCH -with-trace -with-report -with-timeline -with-dag {3} {4} {5} {6}".format(prog_dir, nf_filename.name, root_dir, arguments, input_str, output_arg, output_dir)
     print("nextflow cmdline: {0}".format(cmd))
     P = subprocess.Popen(shlex.split(cmd))
     ppid = os.getpid()
