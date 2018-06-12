@@ -1,15 +1,27 @@
 {% extends "base1.template" %}
 {% block content %}
 
+<script type="text/javascript">
+function changeOutputDir() {
+    var workDirs = { {% for context in flow['contexts'] %} "{{ context['name'] }}" : "{{ context['output_dir'] }}" {% if not loop.last %} , {% endif %} {% endfor %} };
+
+    var curContext = document.getElementById("context").value;
+    var outProj = document.getElementById("text-outProj").value;
+    document.getElementById("header-workdir").innerHTML = "Output Directory: <br/>" + workDirs[curContext] + "/" + outProj;
+}
+
+window.onload = changeOutputDir
+</script>
+
 <h5>Create new run for {{ flow['name'] }}</h5>
-<p>Working directory: {{ contextcfg['root_dir'] }}</p>
+<p id="header-workdir">Output Directory: <br/></p>
 
 <form action='/flow/{{ flow['name'] }}/new' method='POST'>
   <div class="input-group mb-3">
     <div class="input-group-prepend">
       <label class="input-group-text" for="context">Execution context</label>
     </div>
-    <select class="custom-select" id="context" name="context">
+    <select class="custom-select" id="context" name="context" onchange="changeOutputDir()">
       {% for context in flow['contexts'] %}
       <option value="{{ context['name'] }}">{{ context['name'] }}</option>
       {% endfor %}
@@ -72,7 +84,7 @@
     <div class="input-group-prepend">
       <span class="input-group-text" id="basic-addon1">Project Name</span>
     </div>
-    <input name="nfwebparam-output" type=text class="form-control" aria-label="Project Name" aria-describedby="basic-addon1">
+    <input name="nfwebparam-output" id="text-outProj" type=text class="form-control" aria-label="Project Name" aria-describedby="basic-addon1" onchange="changeOutputDir()" >
   </div>
 
   <button type="submit" class="btn btn-primary">Submit</button>
