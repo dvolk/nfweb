@@ -172,20 +172,29 @@ def begin_run(flow_name: str):
         flow_param_cfg = flow_cfg['param']
 
         run_context_dict = dict()
-        for c in flow_cfg['contexts']:
-            run_context_dict[c['name']] = c 
+        try:
+            for c in flow_cfg['contexts']:
+                run_context_dict[c['name']] = c 
 
-            # Append directories to context root if present
-            # TODO handle pths properly
-            if 'root_dirs' in systemCfg[c['name']]:
-                run_context_dict[c['name']]['root_dir'] = systemCfg[c['name']]['root_dirs'] + flow_cfg['root_dir']
-            else:
-                run_context_dict[c['name']]['root_dir'] = flow_cfg['root_dir']
+                # Append directories to context root if present
+                if 'root_dirs' in systemCfg[c['name']]:
+                    run_context_dict[c['name']]['root_dir'] = pathlib.Path(systemCfg[c['name']]['root_dirs']) / flow_cfg['root_dir']
+                else:
+                    raise Exception("No 'root_dirs' in config.")
 
-            if 'prog_dirs' in systemCfg[c['name']]:
-                run_context_dict[c['name']]['prog_dir'] = systemCfg[c['name']]['prog_dirs'] + flow_cfg['prog_dir']
-            else:
-                run_context_dict[c['name']]['prog_dir'] = flow_cfg['prog_dir']
+                if 'prog_dirs' in systemCfg[c['name']]:
+                    run_context_dict[c['name']]['prog_dir'] = pathlib.Path(systemCfg[c['name']]['prog_dirs']) / flow_cfg['prog_dir']
+                else:
+                    raise Exception("No 'prog_dirs' in config.")
+
+                if 'output_dirs' in systemCfg[c['name']]:
+                    run_context_dict[c['name']]['output_dir'] = pathlib.Path(systemCfg[c['name']]['output_dirs'].format(user = flask_login.current_user.id)) / flow_cfg['prog_dir']
+                else:
+                    run_context_dict[c['name']]['output_dir'] = pathlib.Path(run_context_dict[c['name']]['root_dir']) / 'output' / flask_login.current_user.id
+
+        except Exception as e:
+            print(e)
+            abort(404)
 
         return render_template('begin_run.template', flow=flow_cfg, paramcfg=flow_param_cfg, contextcfg=run_context_dict)
 
@@ -198,16 +207,27 @@ def begin_run(flow_name: str):
         run_context_dict = dict()
         for c in flow_cfg['contexts']:
             run_context_dict[c['name']] = c
+        
+        try:
+            # TODO Generate in same method as GET method
+            if 'root_dirs' in systemCfg[context]:
+                root_dir = pathlib.Path(systemCfg[context]['root_dirs']) /  flow_cfg['root_dir'] / flask_login.current_user.id
+            else:
+                raise Exception("No 'root_dirs' in config.")
 
-        if 'root_dirs' in systemCfg[context]:
-            root_dir = systemCfg[context]['root_dirs'] + flow_cfg['root_dir']
-        else:
-            root_dir = flow_cfg['root_dir']
+            if 'prog_dirs' in systemCfg[context]:
+                prog_dir = pathlib.Path(systemCfg[context]['prog_dirs']) / flow_cfg['prog_dir']
+            else:
+                raise Exception("No 'prog_dirs' in config.")
 
-        if 'prog_dirs' in systemCfg[context]:
-            prog_dir = systemCfg[context]['prog_dirs'] + flow_cfg['prog_dir']
-        else:
-            prog_dir = flow_cfg['prog_dir']
+            if 'output_dirs' in systemCfg[context]:
+                output_dir = pathlib.Path(systemCfg[context]['output_dirs'].format(user = flask_login.current_user.id)) / flow_cfg['prog_dir']
+            else:
+                output_dir = root_dir / 'output' / flask_login.current_user.id
+
+        except Exception as e:
+            print(e)
+            abort(404)
 
         # get the form user inputs and use them to format the input and output string
         vs = deque([])
@@ -229,7 +249,7 @@ def begin_run(flow_name: str):
 
                 elif key[11:17] == 'output':
                     output_arg = flow_output_cfg['parameter'] 
-                    output_dir = root_dir + flow_cfg['output_dir'] + flask_login.current_user.id + "/" + request.form[key]
+                    output_dir = output_dir / request.form[key]
                 else:
                     for param in flow_param_cfg['description']:
                         if param['name'] == key[11:]:
@@ -257,9 +277,9 @@ def begin_run(flow_name: str):
             # path to nextflow file relative to the prog_dir
             'nf_filename' : flow_cfg['script'],
             # nextflow work directory
-            'root_dir' : root_dir,
+            'root_dir' : str(root_dir),
             # directory containing nextflow file and misc other files
-            'prog_dir' : prog_dir,
+            'prog_dir' : str(prog_dir),
             # static arguments to nextflow
             'arguments' : run_context_dict[context]['arguments'],
             # user arguments to nextflow
@@ -267,7 +287,7 @@ def begin_run(flow_name: str):
             # output argument to use
             'output_arg' : output_arg,
             # output directory
-            'output_dir' : output_dir,
+            'output_dir' : str(output_dir),
             # web user id that started the run
             'user': flask_login.current_user.id,
             # nfweb run uuid (not to be confused with the uuid generated by nextflow)
@@ -318,7 +338,7 @@ def run_details(flow_name : str, run_uuid: int):
     data = nflib.getRun(flow_name, run_uuid)
     # root_dir is entry 11
     nf_directory = pathlib.Path(data[0][11])
-    output_dir = data[0][13]
+    output_dir = pathlib.Path(data[0][13])
 
     buttons = { }
     pid_filename = nf_directory / 'pids' / "{0}.pid".format(run_uuid)
@@ -346,7 +366,7 @@ def run_details(flow_name : str, run_uuid: int):
     if not trace_filename.is_file():
         abort(404)
     trace_nt = nflib.parseTraceFile(trace_filename)
-    return render_template('run_details.template', uuid=run_uuid, flow_name=flow_name, entries=trace_nt, output_dir=output_dir, buttons=buttons)
+    return render_template('run_details.template', uuid=run_uuid, flow_name=flow_name, entries=trace_nt, output_dir=str(output_dir), buttons=buttons)
 
 @app.route('/flow/<flow_name>/log/<run_uuid>')
 @flask_login.login_required

@@ -50,7 +50,7 @@ prog_dir = pathlib.Path(data['prog_dir'])
 arguments = data['arguments']
 input_str = data['input_str']
 output_arg = data['output_arg']
-output_dir = data['output_dir']
+output_dir = pathlib.Path(data['output_dir'])
 user = data['user']
 sample_group = data['sample_group']
 workflow = data['workflow']
@@ -183,7 +183,7 @@ other = (user,
          context,
          str(root_dir),
          output_arg,
-         output_dir,
+         str(output_dir),
          uuid,
          start_epochtime,
          pid,
@@ -212,7 +212,7 @@ other = (user,
          context,
          str(root_dir),
          output_arg,
-         output_dir,
+         str(output_dir),
          uuid,
          start_epochtime,
          pid,

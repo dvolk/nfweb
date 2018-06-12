@@ -3,9 +3,11 @@ system:
         - name: Local
           prog_dirs: '/home/jez/nextflowPipelines/'
           root_dirs: '/home/jez/nextflowProjects/'
+          output_dirs: '/mnt/linuxData/nextflowOutputs/{user}/nextflowProjects'
         - name: CSSLURM
           prog_dirs: '/mnt/slurmscratch/nextflowPipelines/'
           root_dirs: '/mnt/slurmscratch/nextflowProjects/'
+          output_dirs: '/mnt/microbio/HOMES/ndm.local/{user}/nextflowProjects'
         - name: Azure
           prog_dirs: '/datadisks/disk1/cifs/code/'
           root_dirs: '/datadisks/disk1/nfs/projects/'
@@ -23,13 +25,8 @@ nextflows:
       - name: Local
         arguments: ""
     input:
-<<<<<<< config.yaml-example
       # Number of compulsory argumnets (IE Total arguments - switches) - Currently unused
       # minargs: 2
-=======
-      # Number of compulsory argumnets (IE Total arguments - switches)
-      minargs: 2
->>>>>>> config.yaml-example
       description:
         # name: name of argument to be appended to nfwebparaminput
         # arg: switch in nextflow
@@ -38,11 +35,7 @@ nextflows:
         # desc: Description for the run page
         - name: 'infile'
           arg: "--in_fasta"
-<<<<<<< config.yaml-example
           type: input-reqr
-=======
-          type: text 
->>>>>>> config.yaml-example
           desc: "A single fasta file"
         - name: 'species'
           arg: "--species"
