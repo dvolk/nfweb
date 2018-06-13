@@ -188,7 +188,7 @@ def begin_run(flow_name: str):
                     raise Exception("No 'prog_dirs' in config.")
 
                 if 'output_dirs' in systemCfg[c['name']]:
-                    run_context_dict[c['name']]['output_dir'] = pathlib.Path(systemCfg[c['name']]['output_dirs'].format(user = flask_login.current_user.id)) / flow_cfg['prog_dir']
+                    run_context_dict[c['name']]['output_dir'] = pathlib.Path(systemCfg[c['name']]['output_dirs'].format(user = flask_login.current_user.id)) / flow_cfg['root_dir']
                 else:
                     run_context_dict[c['name']]['output_dir'] = pathlib.Path(run_context_dict[c['name']]['root_dir']) / 'output' / flask_login.current_user.id
 
@@ -221,7 +221,7 @@ def begin_run(flow_name: str):
                 raise Exception("No 'prog_dirs' in config.")
 
             if 'output_dirs' in systemCfg[context]:
-                output_dir = pathlib.Path(systemCfg[context]['output_dirs'].format(user = flask_login.current_user.id)) / flow_cfg['prog_dir']
+                output_dir = pathlib.Path(systemCfg[context]['output_dirs'].format(user = flask_login.current_user.id)) / flow_cfg['root_dir']
             else:
                 output_dir = root_dir / 'output' / flask_login.current_user.id
 
