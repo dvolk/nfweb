@@ -13,6 +13,8 @@ from collections import deque
 from flask import Flask, request, render_template, redirect, abort, url_for
 import flask_login
 
+from ldap3 import Connection
+
 from passlib.hash import bcrypt
 
 import nflib
@@ -58,21 +60,49 @@ def login():
     if request.method == 'POST':
         form_username = request.form['username']
         form_password = request.form['password']
-        if form_username in users:
-            password_hash = users[form_username]['password']
-            if bcrypt.verify(form_password, password_hash):
+
+        if auth == 'ldap':
+            print(cfg.get('ldap'))
+            conn = Connection(cfg.get('ldap')['host'], user=form_username, password=form_password)
+            if conn.bind():
+                print("ldap user {0} logged in".format(form_username))
+
                 user = User()
                 user.id = form_username
                 flask_login.login_user(user)
+
+                cap = []
+                if form_username in cfg.get('ldap')['admins']:
+                    cap = ['admin']
+
+                users[form_username] = { 'name': form_username, 'capabilities' : cap }
+
                 return redirect('/')
+            else:
+                print("invalid credentials for ldap user {0}".format(form_username))
+        if auth == 'builtin':
+            if form_username in users:
+                password_hash = users[form_username]['password']
+                if bcrypt.verify(form_password, password_hash):
+                    print("user {0} logged in".format(form_username))
+                    user = User()
+                    user.id = form_username
+                    flask_login.login_user(user)
+                    return redirect('/')
+                else:
+                    print("invalid credentials for user {0}".format(form_username))
+
+        # login fail
         return redirect('/login')
 
 def reload_cfg():
     global cfg
     cfg = config.Config()
     cfg.load("config.yaml")
+    global auth
+    auth = cfg.get('authentication')
     global systemCfg
-    systemCfg = dict()    
+    systemCfg = dict()
     for c in cfg.get('system')['contexts']:
         systemCfg[c['name']] = c
     global flows
@@ -207,7 +237,7 @@ def begin_run(flow_name: str):
         run_context_dict = dict()
         for c in flow_cfg['contexts']:
             run_context_dict[c['name']] = c
-        
+
         try:
             # TODO Generate in same method as GET method
             if 'root_dirs' in systemCfg[context]:
