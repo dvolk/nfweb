@@ -23,6 +23,8 @@
 </tbody>
 </table>
 
+{% if auth == 'builtin' %}
+
 <h2>Update password</h2>
 
 <div class="col col-6" style="padding: 0px">
@@ -55,5 +57,7 @@
 </form>
 
 </div>
+
+{% endif %}
 
 {% endblock %}

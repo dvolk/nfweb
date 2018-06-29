@@ -47,6 +47,12 @@ nextflows:
     output:
         parameter: "--output_dir"
 
+authentication: ldap
+
+ldap:
+  - host: 192.168.7.16
+    admins: ['denisv@ndm.local']
+
 users:
   - name: "compass"
     password: '$2a$12$NhIPF.mW24TkOHszeXFvKeGUPTF2zxvwGSSUtNK1PF8bATRoJnjJK'
