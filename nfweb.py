@@ -72,8 +72,15 @@ def login():
                 flask_login.login_user(user)
 
                 cap = []
-                if form_username in cfg.get('ldap')['admins']:
-                    cap = ['admin']
+                if cfg.get('ldap')['admin_LDAP_memberOf']:
+                    conn.search(search_base='DC=ndm,DC=local', search_filter='(userPrincipalName='+user.id+')', attributes='memberOf')
+                    for userInfo in conn.entries:
+                        for line in list(userInfo)[0]:
+                            for element in line.split(','):
+                                cnStart = element.find("CN=")
+                                if cnStart >= 0:
+                                    if element[cnStart+3:] == cfg.get('ldap')['admin_LDAP_memberOf']:
+                                        cap = ['admin']
 
                 users[form_username] = { 'name': form_username, 'capabilities' : cap }
 

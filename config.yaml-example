@@ -50,8 +50,8 @@ nextflows:
 authentication: ldap
 
 ldap:
-  - host: 192.168.7.16
-    admins: ['denisv@ndm.local']
+    host: 192.168.7.16
+    admin_LDAP_memberOf: 'Administrators'
 
 users:
   - name: "compass"
