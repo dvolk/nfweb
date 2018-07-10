@@ -63,28 +63,34 @@ def login():
 
         if auth == 'ldap':
             print(cfg.get('ldap'))
-            conn = Connection(cfg.get('ldap')['host'], user=form_username, password=form_password)
+            # Connect to LDAP
+            conn = Connection(cfg.get('ldap')['host'], user=form_username, password=form_password, read_only=true)
             if conn.bind():
-                print("ldap user {0} logged in".format(form_username))
-
                 user = User()
-                user.id = form_username
-                flask_login.login_user(user)
-
                 cap = []
                 if cfg.get('ldap')['admin_LDAP_memberOf']:
-                    conn.search(search_base='DC=ndm,DC=local', search_filter='(userPrincipalName='+user.id+')', attributes='memberOf')
+                    # find short login name and AD groups
+                    conn.search(search_base='DC=ndm,DC=local', search_filter='(userPrincipalName='+form_username+')', attributes=['sAMAccountName','memberOf'])
                     for userInfo in conn.entries:
-                        for line in list(userInfo)[0]:
+                        user.id = userInfo['sAMAccountName'][0]
+                        
+                        # Check if user is Admin
+                        for line in userInfo['memberOf']:
                             for element in line.split(','):
                                 cnStart = element.find("CN=")
                                 if cnStart >= 0:
                                     if element[cnStart+3:] == cfg.get('ldap')['admin_LDAP_memberOf']:
                                         cap = ['admin']
 
-                users[form_username] = { 'name': form_username, 'capabilities' : cap }
+                # Ensure that a valid username was found above
+                try:
+                    flask_login.login_user(user)
+                    users[user.id] = { 'name': user.id, 'capabilities' : cap }
+                    print("ldap user {0} logged in".format(form_username))
 
-                return redirect('/')
+                    return redirect('/')
+                except:
+                    print("Could not find user details for user {0}".format(form_username))
             else:
                 print("invalid credentials for ldap user {0}".format(form_username))
         if auth == 'builtin':
