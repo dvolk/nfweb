@@ -63,14 +63,27 @@ def login():
 
         if auth == 'ldap':
             print(cfg.get('ldap'))
+            # Apply Domain to username
+            domain = cfg.get('ldap')['LDAP_domain']
+            loginUser = "{0}@{1}".format(form_username, domain)
+
             # Connect to LDAP
-            conn = Connection(cfg.get('ldap')['host'], user=form_username, password=form_password, read_only=true)
+            conn = Connection(cfg.get('ldap')['host'], user=loginUser, password=form_password, read_only=True)
             if conn.bind():
                 user = User()
                 cap = []
                 if cfg.get('ldap')['admin_LDAP_memberOf']:
+                    # define search_base using domain info
+                    search_base_string = ""
+                    for element in domain.split('.'):
+                        if len(search_base_string)>1:
+                            search_base_string += ",DC={0}".format(element)
+                        else:
+                            search_base_string += "DC={0}".format(element)
+
                     # find short login name and AD groups
-                    conn.search(search_base='DC=ndm,DC=local', search_filter='(userPrincipalName='+form_username+')', attributes=['sAMAccountName','memberOf'])
+                    conn.search(search_base=search_base_string, search_filter='(userPrincipalName='+loginUser+')', attributes=['sAMAccountName','memberOf'])
+                    
                     for userInfo in conn.entries:
                         user.id = userInfo['sAMAccountName'][0]
                         
