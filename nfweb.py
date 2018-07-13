@@ -370,7 +370,7 @@ def begin_run(flow_name: str):
         data_json = json.dumps(data)
 
         # launch go.py with data as the argument (carefully shell escaped)
-        cmd = "python3 go.py {0} &".format(shlex.quote(data_json))
+        cmd = "python3 go.py {0} {1} &".format(shlex.quote(data_json), cfg.get('ldap')['LDAP_domain'] )
         print(cmd)
         os.system(cmd)
         return redirect("/flow/{0}".format(flow_name))

@@ -41,6 +41,10 @@ start_epochtime = str(int(time.time()))
 
 # Data to from nfweb.py is passed in here as json
 data = json.loads(sys.argv[1])
+if (len( sys.argv) > 2):
+    domain = sys.argv[2]
+else:
+    domain = ""
 
 # Rebind the data
 uuid = data['run_uuid']
@@ -165,6 +169,7 @@ if (len(traceFilename) > 0):
     os.symlink(str(run_dir / traceFilename), str(pathlib.Path('traces') / "{0}.trace".format(internal_uuid)))
 else:
     print ("ERROR: Need trace file to work properly. Execution will continue but access will not be possible trough Web UI")
+    print ("trace path = {0}".format(traceFilename))
 
 # sqlite nfruns table columns reference
 #  1 date_time
@@ -233,6 +238,30 @@ other = (user,
 s = tuple(hist) + other
 end_epochtime = str(int(time.time()))
 nflib.reinsertRun(s, uuid, internal_uuid, oldpwd)
+
+# Change ownership of running directory to user when finished
+if (len(domain) > 0):
+    try :
+        uidProc = subprocess.Popen("id -u {0}@{1}".format(user, domain),shell=True, stdout=subprocess.PIPE)
+        for line in uidProc.stdout:
+            if len(line) > 0:
+                uid = int(line)
+
+        gidProc = subprocess.Popen("id -g {0}@{1}".format(user, domain),shell=True, stdout=subprocess.PIPE)
+        for line in gidProc.stdout:
+            if len(line) > 0:
+                gid = int(line)
+
+        for root, dirs, files in os.walk(str(run_dir), topdown=False):
+            for name in files:
+                shutil.chown(os.path.join(root, name), uid, gid)
+            for name in dirs:
+                shutil.chown(os.path.join(root, name), uid, gid)
+        shutil.chown(str(run_dir), uid, gid)
+
+    except Exception as e:
+        print("run_dir = {0}".format(run_dir))
+        print(e)
 
 # go back to the old directory
 # not needed?
