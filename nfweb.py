@@ -420,6 +420,7 @@ def run_details(flow_name : str, run_uuid: int):
 
     trace_filename = nf_directory / 'traces/{0}.trace'.format(run_uuid)
     if not trace_filename.is_file():
+        print (trace_filename)
         abort(404)
     trace_nt = nflib.parseTraceFile(trace_filename)
     return render_template('run_details.template', uuid=run_uuid, flow_name=flow_name, entries=trace_nt, output_dir=str(output_dir), buttons=buttons)

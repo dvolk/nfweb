@@ -124,6 +124,7 @@ ppid = str(q.get())
 cache_dir = pathlib.Path(run_dir / '.nextflow' / 'cache')
 while not cache_dir.is_dir():
     print("Waiting for cache dir to be created...")
+    print("cahce dir = {}".format(str(cache_dir)))
     time.sleep(1)
 
 # change into the working directory
@@ -152,7 +153,18 @@ with open(str(pathlib.Path('pids') / "{0}.pid".format(internal_uuid)), 'w') as f
 # by referencing the internal uuid
 os.symlink(str(run_dir), str(root_dir / 'maps' / internal_uuid))
 # link the trace
-os.symlink(str(run_dir / 'trace.txt'), str(pathlib.Path('traces') / "{0}.trace".format(internal_uuid)))
+traceFilename=""
+with open( str(root_dir / 'maps' / internal_uuid / ".nextflow.log"), 'r' ) as logFile:
+    for line in logFile:
+        if "nextflow.trace.TraceFileObserver" in line:
+            logSplit = line.split('/')
+            traceFilename = logSplit[-1][:-1]
+            break
+
+if (len(traceFilename) > 0):
+    os.symlink(str(run_dir / traceFilename), str(pathlib.Path('traces') / "{0}.trace".format(internal_uuid)))
+else:
+    print ("ERROR: Need trace file to work properly. Execution will continue but access will not be possible trough Web UI")
 
 # sqlite nfruns table columns reference
 #  1 date_time
