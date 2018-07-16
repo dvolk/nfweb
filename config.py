@@ -16,4 +16,3 @@ class Config:
 
     def get(self, field: str):
         return self.config[field]
-

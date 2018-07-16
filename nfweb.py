@@ -64,7 +64,7 @@ def login():
         if auth == 'ldap':
             print(cfg.get('ldap'))
             # Apply Domain to username
-            domain = cfg.get('ldap')['LDAP_domain']
+            domain = cfg.get('ldap')['domain']
             loginUser = "{0}@{1}".format(form_username, domain)
 
             # Connect to LDAP
@@ -72,7 +72,7 @@ def login():
             if conn.bind():
                 user = User()
                 cap = []
-                if cfg.get('ldap')['admin_LDAP_memberOf']:
+                if cfg.get('ldap')['admin_group']:
                     # define search_base using domain info
                     search_base_string = ""
                     for element in domain.split('.'):
@@ -92,7 +92,7 @@ def login():
                             for element in line.split(','):
                                 cnStart = element.find("CN=")
                                 if cnStart >= 0:
-                                    if element[cnStart+3:] == cfg.get('ldap')['admin_LDAP_memberOf']:
+                                    if element[cnStart+3:] == cfg.get('ldap')['admin_group']:
                                         cap = ['admin']
 
                 # Ensure that a valid username was found above
@@ -328,7 +328,11 @@ def begin_run(flow_name: str):
 #        return redirect("/flow/{0}/new".format(flow_name))
         run_uuid = str(uuid.uuid4())
 
-        # all the data that is passed to go.py (which starts nextflow)
+        if cfg.get('authentication') == "ldap":
+            ldap_domain = cfg.get('ldap')['domain']
+        else:
+            ldap_domain = ''
+
         data = {
             # path to nextflow file relative to the prog_dir
             'nf_filename' : flow_cfg['script'],
@@ -353,11 +357,12 @@ def begin_run(flow_name: str):
             # workflow name
             'workflow': flow_name,
             # execution context (i.e. local or slurm or whatever)
-            'context': context
+            'context': context,
+            # ldap domain or empty string if not domain
+            'ldap_domain': ldap_domain
         }
 
         try:
-            # insert a dummy entry into the table so that the user sees that a run is starting
             # this is replaced when the nextflow process starts
             nflib.insertDummyRun(data)
         except Exception as e:
@@ -370,7 +375,7 @@ def begin_run(flow_name: str):
         data_json = json.dumps(data)
 
         # launch go.py with data as the argument (carefully shell escaped)
-        cmd = "python3 go.py {0} {1} &".format(shlex.quote(data_json), cfg.get('ldap')['LDAP_domain'] )
+        cmd = "python3 go.py {0} &".format(shlex.quote(data_json))
         print(cmd)
         os.system(cmd)
         return redirect("/flow/{0}".format(flow_name))

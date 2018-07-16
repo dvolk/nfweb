@@ -41,10 +41,6 @@ start_epochtime = str(int(time.time()))
 
 # Data to from nfweb.py is passed in here as json
 data = json.loads(sys.argv[1])
-if (len( sys.argv) > 2):
-    domain = sys.argv[2]
-else:
-    domain = ""
 
 # Rebind the data
 uuid = data['run_uuid']
@@ -59,6 +55,7 @@ user = data['user']
 sample_group = data['sample_group']
 workflow = data['workflow']
 context = data['context']
+domain = data['ldap_domain']
 
 # Create the run dir
 run_dir = root_dir / "runs" / uuid
@@ -239,29 +236,21 @@ s = tuple(hist) + other
 end_epochtime = str(int(time.time()))
 nflib.reinsertRun(s, uuid, internal_uuid, oldpwd)
 
+# if using a domain
 # Change ownership of running directory to user when finished
-if (len(domain) > 0):
-    try :
-        uidProc = subprocess.Popen("id -u {0}@{1}".format(user, domain),shell=True, stdout=subprocess.PIPE)
-        for line in uidProc.stdout:
-            if len(line) > 0:
-                uid = int(line)
-
-        gidProc = subprocess.Popen("id -g {0}@{1}".format(user, domain),shell=True, stdout=subprocess.PIPE)
-        for line in gidProc.stdout:
-            if len(line) > 0:
-                gid = int(line)
-
-        for root, dirs, files in os.walk(str(run_dir), topdown=False):
-            for name in files:
-                shutil.chown(os.path.join(root, name), uid, gid)
-            for name in dirs:
-                shutil.chown(os.path.join(root, name), uid, gid)
-        shutil.chown(str(run_dir), uid, gid)
-
-    except Exception as e:
-        print("run_dir = {0}".format(run_dir))
-        print(e)
+#
+# for this to work you'll need a line such as
+#
+# denisv@ndm.local ALL=(ALL) NOPASSWD: /bin/chown
+#
+# in your /etc/sudoers file
+if domain:
+    for dir in [run_dir, output_dir]:
+        cmd_string = "sudo chown -R {0}@{1} {2}".format(user, domain, dir)
+        print("running '{0}'".format(cmd_string))
+        ret = os.system(cmd_string)
+        if ret != 0:
+            print("Error: chown returned code {0}".format(ret))
 
 # go back to the old directory
 # not needed?
