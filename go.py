@@ -245,12 +245,17 @@ nflib.reinsertRun(s, uuid, internal_uuid, oldpwd)
 #
 # in your /etc/sudoers file
 if domain:
-    for dir in [run_dir, output_dir]:
-        cmd_string = "sudo chown -R {0}@{1} {2}".format(user, domain, dir)
-        print("running '{0}'".format(cmd_string))
-        ret = os.system(cmd_string)
-        if ret != 0:
-            print("Error: chown returned code {0}".format(ret))
+    groupProc = subprocess.run(["id","-g","{0}@{1}".format(user, domain)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+    if (len(groupProc.stderr) > 0):
+        print("Error: could not find user group. returned {0}".format(groupProc.stderr))
+    else: 
+        for dir in [run_dir, output_dir]:
+            cmd_string = "sudo chown -R {0}@{1}:{2} {3}".format(user, domain, groupProc.stdout.strip(" \n"), dir)
+            print("running '{0}'".format(cmd_string))
+            ret = os.system(cmd_string)
+            if ret != 0:
+                print("Error: chown returned code {0}".format(ret))
 
 # go back to the old directory
 # not needed?
