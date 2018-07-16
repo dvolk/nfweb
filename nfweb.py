@@ -63,21 +63,47 @@ def login():
 
         if auth == 'ldap':
             print(cfg.get('ldap'))
-            conn = Connection(cfg.get('ldap')['host'], user=form_username, password=form_password)
+            # Apply Domain to username
+            domain = cfg.get('ldap')['LDAP_domain']
+            loginUser = "{0}@{1}".format(form_username, domain)
+
+            # Connect to LDAP
+            conn = Connection(cfg.get('ldap')['host'], user=loginUser, password=form_password, read_only=True)
             if conn.bind():
-                print("ldap user {0} logged in".format(form_username))
-
                 user = User()
-                user.id = form_username
-                flask_login.login_user(user)
-
                 cap = []
-                if form_username in cfg.get('ldap')['admins']:
-                    cap = ['admin']
+                if cfg.get('ldap')['admin_LDAP_memberOf']:
+                    # define search_base using domain info
+                    search_base_string = ""
+                    for element in domain.split('.'):
+                        if len(search_base_string)>1:
+                            search_base_string += ",DC={0}".format(element)
+                        else:
+                            search_base_string += "DC={0}".format(element)
 
-                users[form_username] = { 'name': form_username, 'capabilities' : cap }
+                    # find short login name and AD groups
+                    conn.search(search_base=search_base_string, search_filter='(userPrincipalName='+loginUser+')', attributes=['sAMAccountName','memberOf'])
+                    
+                    for userInfo in conn.entries:
+                        user.id = userInfo['sAMAccountName'][0]
+                        
+                        # Check if user is Admin
+                        for line in userInfo['memberOf']:
+                            for element in line.split(','):
+                                cnStart = element.find("CN=")
+                                if cnStart >= 0:
+                                    if element[cnStart+3:] == cfg.get('ldap')['admin_LDAP_memberOf']:
+                                        cap = ['admin']
 
-                return redirect('/')
+                # Ensure that a valid username was found above
+                try:
+                    flask_login.login_user(user)
+                    users[user.id] = { 'name': user.id, 'capabilities' : cap }
+                    print("ldap user {0} logged in".format(form_username))
+
+                    return redirect('/')
+                except:
+                    print("Could not find user details for user {0}".format(form_username))
             else:
                 print("invalid credentials for ldap user {0}".format(form_username))
         if auth == 'builtin':
@@ -344,7 +370,7 @@ def begin_run(flow_name: str):
         data_json = json.dumps(data)
 
         # launch go.py with data as the argument (carefully shell escaped)
-        cmd = "python3 go.py {0} &".format(shlex.quote(data_json))
+        cmd = "python3 go.py {0} {1} &".format(shlex.quote(data_json), cfg.get('ldap')['LDAP_domain'] )
         print(cmd)
         os.system(cmd)
         return redirect("/flow/{0}".format(flow_name))
@@ -394,6 +420,7 @@ def run_details(flow_name : str, run_uuid: int):
 
     trace_filename = nf_directory / 'traces/{0}.trace'.format(run_uuid)
     if not trace_filename.is_file():
+        print (trace_filename)
         abort(404)
     trace_nt = nflib.parseTraceFile(trace_filename)
     return render_template('run_details.template', uuid=run_uuid, flow_name=flow_name, entries=trace_nt, output_dir=str(output_dir), buttons=buttons)
