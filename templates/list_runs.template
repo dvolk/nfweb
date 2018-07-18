@@ -31,7 +31,7 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
   <thead>
     <tr>
       <th scope="col">Started On</th>
-      <th scope="col">Plate</th>
+      <th scope="col">Project</th>
       <th scope="col">Context</th>
       <th scope="col">User</th>
       <th scope="col">Duration</th>
@@ -43,12 +43,12 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
     {% for entry in data %}
     <tr>
       <th scope="row">{{ entry[0] }}</th>
-      <td>{{ entry[8] }}</td>
+      <td>{{ entry[19] }}</td>
       <td>{{ entry[10] }}</td>
       <td>{{ entry[7] }}</td>
       <td>{{ entry[1] }}</td>
       <td>
-	<span href="#" style="padding: 3px; background-color: {% if entry[3] == "ERR" %}#FF6347{% elif entry[3] == "OK" %}#F0F8FF{% else %}#00BFFF{% endif %}">
+	<span href="#" style="padding: 3px; background-color: {% if entry[3] == "ERR" or entry[3] == "FAIL" %}#FF6347{% elif entry[3] == "OK" %}#F0F8FF{% else %}#00BFFF{% endif %}">
 	  {% if entry[3] == "-" %}
 	  RUNNING
 	  {% else %}
@@ -57,7 +57,7 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
 	  <span>
       </td>
       {% if entry[3] != "STARTING" %}
-      <td><a href="/flow/{{ stuff['flow_name'] }}/details/{{ entry[5] }}">Details</td>
+      <td><a href="/flow/{{ stuff['flow_name'] }}/{% if entry[3] == "FAIL" %}go_details{% else %}details{% endif %}/{{ entry[5] }}">Details</td>
       {% endif %}
     </tr>
     {% endfor %}

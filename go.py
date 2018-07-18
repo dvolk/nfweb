@@ -56,6 +56,7 @@ sample_group = data['sample_group']
 workflow = data['workflow']
 context = data['context']
 domain = data['ldap_domain']
+output_name = data['output_name']
 
 # Create the run dir
 run_dir = root_dir / "runs" / uuid
@@ -64,21 +65,31 @@ print(run_dir)
 os.makedirs(str(run_dir), exist_ok=True)
 os.makedirs(str(output_dir), exist_ok=True)
 
-# Copy nextflow file to the run dir
-#shutil.copy2(str(prog_dir / nf_filename), str(run_dir))
-
-# Copy the profile to the run dir. Search for the profile in the prog_dir and prog_dir/nextflow
-#try:
-#    shutil.copy2(str(prog_dir / 'nextflow.config'), str(run_dir))
-#except:
-#    try:
-#        shutil.copy2(str(prog_dir / 'nextflow' / 'nextflow.config'), str(run_dir))
-#    except:
-#        print("No nextflow.config found")
-
 # Cache the current directory and then change into the run directory.
 oldpwd = pathlib.Path.cwd()
 os.chdir(str(run_dir))
+
+internal_uuid = None
+
+def exit_nicely():
+    end_epochtime = str(int(time.time()))
+    other = (user, sample_group, workflow, context, str(root_dir), output_arg, str(output_dir),
+             uuid, start_epochtime, pid, ppid, end_epochtime, output_name, str(data))
+    if not internal_uuid:
+        # we don't have an internal_uuid, which means there's no history file
+        nice_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(start_epochtime)))
+        hist = [nice_time, '-', '-', 'FAIL', '-', uuid, '-']
+        s = tuple(list(hist)) + other
+        nflib.insertRun(s, uuid, oldpwd)
+    else:
+        hist = nflib.parseHistoryFile(run_dir / '.nextflow' / 'history')
+        hist = list(hist[0])
+        if nf_returncode != "0":
+            hist[3] = "ERR"
+        s = tuple(hist) + other
+        nflib.reinsertRun(s, uuid, internal_uuid, oldpwd)
+    print("exit_nicely(): exiting prematurely but nicely")
+    exit(-126)
 
 T = None
 pid = None
@@ -88,7 +99,7 @@ q = queue.Queue()
 def run_nextflow(queue):
     cmd = "nextflow {0}/{1} -w {2}/SCRATCH -with-trace -with-report -with-timeline -with-dag {3} {4} {5} {6}".format(prog_dir, nf_filename.name, root_dir, arguments, input_str, output_arg, output_dir)
     print("nextflow cmdline: {0}".format(cmd))
-    P = subprocess.Popen(shlex.split(cmd))
+    P = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     ppid = os.getpid()
     print("python process pid: {0}".format(ppid))
     proc = psutil.Process(ppid)
@@ -104,7 +115,7 @@ def run_nextflow(queue):
     # never happened - not needed?
     if not procchild.name() == 'nextflow':
         print("Excuse me?")
-        os.exit(-127)
+        exit_nicely()
     pid = procchild.pid
     queue.put(pid)
     queue.put(ppid)
@@ -112,6 +123,14 @@ def run_nextflow(queue):
     print("thread waiting for nextflow")
     ret = P.wait()
     print("nextflow process terminated with code {0}".format(ret))
+    print("--- nextflow stdout ---")
+    for line in P.stdout:
+        print(line.strip())
+    print("------")
+    print("--- nextflow stderr ---")
+    for line in P.stderr:
+        print(line.strip())
+    print("------")
     queue.put(ret)
 
 T = threading.Thread(target=run_nextflow, args=(q,))
@@ -121,21 +140,27 @@ T.start()
 pid = str(q.get())
 ppid = str(q.get())
 
-# wait until nextflow creates the cache dir
-cache_dir = pathlib.Path(run_dir / '.nextflow' / 'cache')
-while not cache_dir.is_dir():
-    print("Waiting for cache dir to be created...")
-    print("cahce dir = {}".format(str(cache_dir)))
-    time.sleep(1)
+def wait_for_cache_dir():
+    cache_dir = pathlib.Path(run_dir / '.nextflow' / 'cache')
+    print("cache dir = {}".format(str(cache_dir)))
+
+    # wait until nextflow creates the cache dir
+    tries = 10
+    while not cache_dir.is_dir():
+        print("Waiting for cache dir to be created...")
+        time.sleep(1)
+        tries = tries - 1
+        if tries <= 0:
+            # Give up after 10 tries
+            print("Error: Time out on cache dir")
+            return False
+    return True
+
+if not wait_for_cache_dir():
+    exit_nicely()
 
 # change into the working directory
 os.chdir(str(root_dir))
-
-# Add the history entry from the nextflow file into the main history file
-# I don't think this is used any more?
-with open(str(run_dir / '.nextflow' / 'history')) as history_i:
-    with open('history', 'a') as history_o:
-        history_o.write(history_i.read())
 
 # get the nextflow run uuid. This is different from the nfweb uuid because we need that
 # before nextflow starts
@@ -154,19 +179,7 @@ with open(str(pathlib.Path('pids') / "{0}.pid".format(internal_uuid)), 'w') as f
 # by referencing the internal uuid
 os.symlink(str(run_dir), str(root_dir / 'maps' / internal_uuid))
 # link the trace
-traceFilename=""
-with open( str(root_dir / 'maps' / internal_uuid / ".nextflow.log"), 'r' ) as logFile:
-    for line in logFile:
-        if "nextflow.trace.TraceFileObserver" in line:
-            logSplit = line.split('/')
-            traceFilename = logSplit[-1][:-1]
-            break
-
-if (len(traceFilename) > 0):
-    os.symlink(str(run_dir / traceFilename), str(pathlib.Path('traces') / "{0}.trace".format(internal_uuid)))
-else:
-    print ("ERROR: Need trace file to work properly. Execution will continue but access will not be possible trough Web UI")
-    print ("trace path = {0}".format(traceFilename))
+os.symlink(str(run_dir / 'trace.txt'), str(pathlib.Path('traces') / "{0}.trace".format(internal_uuid)))
 
 # sqlite nfruns table columns reference
 #  1 date_time
@@ -188,6 +201,8 @@ else:
 # 17 pid
 # 18 ppid
 # 19 end_epochtime
+# 20 output_name
+# 21 data_json
 
 end_epochtime = str(int(time.time()))
 hist = nflib.parseHistoryFile(run_dir / '.nextflow' / 'history')
@@ -202,7 +217,9 @@ other = (user,
          start_epochtime,
          pid,
          ppid,
-         end_epochtime)
+         end_epochtime,
+         output_name,
+         str(data))
 
 # add the run to the sqlite database
 s = tuple(list(hist[0])) + other
@@ -231,7 +248,9 @@ other = (user,
          start_epochtime,
          pid,
          ppid,
-         end_epochtime)
+         end_epochtime,
+         output_name,
+         str(data))
 s = tuple(hist) + other
 end_epochtime = str(int(time.time()))
 nflib.reinsertRun(s, uuid, internal_uuid, oldpwd)
@@ -245,17 +264,21 @@ nflib.reinsertRun(s, uuid, internal_uuid, oldpwd)
 #
 # in your /etc/sudoers file
 if domain:
-    groupProc = subprocess.run(["id","-g","{0}@{1}".format(user, domain)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    cmd_list = ["id","-g","{0}@{1}".format(user, domain)]
+    print("running '{0}'".format(cmd_list))
+    groupProc = subprocess.run(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    if groupProc.returncode != 0:
+        print("Error: Couldn't get group for user:")
+        print("Error: {0}".format(groupProc.stderr))
+    
+    group = groupProc.stdout.strip()
 
-    if (len(groupProc.stderr) > 0):
-        print("Error: could not find user group. returned {0}".format(groupProc.stderr))
-    else: 
-        for dir in [run_dir, output_dir]:
-            cmd_string = "sudo chown -R {0}@{1}:{2} {3}".format(user, domain, groupProc.stdout.strip(" \n"), dir)
-            print("running '{0}'".format(cmd_string))
-            ret = os.system(cmd_string)
-            if ret != 0:
-                print("Error: chown returned code {0}".format(ret))
+    for dir in [run_dir, output_dir]:
+        cmd_string = "sudo chown -R {0}@{1}:{2} {3}".format(user, domain, group, dir)
+        print("running '{0}'".format(cmd_string))
+        ret = os.system(cmd_string)
+        if ret != 0:
+            print("Error: chown returned code {0}".format(ret))
 
 # go back to the old directory
 # not needed?

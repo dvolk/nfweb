@@ -359,7 +359,9 @@ def begin_run(flow_name: str):
             # execution context (i.e. local or slurm or whatever)
             'context': context,
             # ldap domain or empty string if not domain
-            'ldap_domain': ldap_domain
+            'ldap_domain': ldap_domain,
+            # name
+            'output_name': request.form['nfwebparam-output']
         }
 
         try:
@@ -374,8 +376,12 @@ def begin_run(flow_name: str):
         # convert to json
         data_json = json.dumps(data)
 
+        # log file to capture the output of go.py to a file
+        log_dir = cfg.get('log_dir')
+        log_filename = "{0}.log".format(run_uuid)
+        log_file =  pathlib.Path(log_dir) / log_filename
         # launch go.py with data as the argument (carefully shell escaped)
-        cmd = "python3 go.py {0} &".format(shlex.quote(data_json))
+        cmd = "( python3 go.py {0} | tee {1} ) &".format(shlex.quote(data_json), log_file)
         print(cmd)
         os.system(cmd)
         return redirect("/flow/{0}".format(flow_name))
@@ -391,6 +397,27 @@ def list_runs(flow_name : str):
 
     data = nflib.getWorkflow(flow_name)
     return render_template('list_runs.template', stuff={ 'flow_name': flow_cfg['name'] }, data=data)
+
+@app.route('/flow/<flow_name>/go_details/<uuid>')
+@flask_login.login_required
+def go_details(flow_name : str, uuid: str):
+    # this can be called with either the run_uuid or the internal uuid
+    # try it with the run uuid first
+    log_dir = cfg.get('log_dir')
+    log_filename = "{0}.log".format(uuid)
+    log_file =  pathlib.Path(log_dir) / log_filename
+    if not log_file.is_file():
+        # if it doesn't exist, try to get it by the internal uuid then
+        uuids = nflib.get_run_uuid_from_internal_uuid(flow_name, uuid)
+        print(uuids)
+        if uuids:
+            run_uuid = uuids[0][0]
+            log_filename = "{0}.log".format(run_uuid)
+            log_file =  pathlib.Path(log_dir) / log_filename
+    if not log_file.is_file():
+            abort(404)
+    with open(str(log_file)) as lf:
+        return render_template('show_log.template', content=lf.read(), uuid=uuid)
 
 @app.route('/flow/<flow_name>/details/<run_uuid>')
 @flask_login.login_required
