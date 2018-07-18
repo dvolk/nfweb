@@ -47,6 +47,8 @@ nextflows:
     output:
         parameter: "--output_dir"
 
+log_dir: '/home/ndm.local/denisv/pipelines/logs'
+
 authentication: ldap
 
 ldap:
