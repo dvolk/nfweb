@@ -5,6 +5,7 @@
 
 <div class="container">
   {% if buttons['log'] %}<a href="/flow/{{ flow_name }}/log/{{ uuid }}"><button type="button" class="btn btn-info">View log</button></a>{% endif %}
+  {% if buttons['output_files'] %}<a href="/flow/{{ flow_name }}/output_files/{{ uuid }}"><button type="button" class="btn btn-primary">View files</button></a>{% endif %}
   {% if buttons['report'] %}<a href="/flow/{{ flow_name }}/report/{{ uuid }}"><button type="button" class="btn btn-primary">View report</button></a>{% endif %}
   {% if buttons['timeline'] %}<a href="/flow/{{ flow_name }}/timeline/{{ uuid }}"><button type="button" class="btn btn-primary">View timeline</button></a>{% endif %}
   {% if buttons['dagdot'] %}<a href="/flow/{{ flow_name }}/dagdot/{{ uuid }}"><button type="button" class="btn btn-primary">View DAG</button></a>{% endif %}
