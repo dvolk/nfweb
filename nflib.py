@@ -58,7 +58,7 @@ def getStatus():
     running = recent = failed = list()
     running = con.execute('select * from nfruns where status = "-" order by "start_epochtime" desc').fetchall()
     recent = con.execute('select * from nfruns where status = "OK" order by "start_epochtime" desc limit 5').fetchall()
-    failed = con.execute('select * from nfruns where status = "ERR" order by "start_epochtime" desc limit 5').fetchall()
+    failed = con.execute('select * from nfruns where status = "ERR" or status = "FAIL" order by "start_epochtime" desc limit 5').fetchall()
 
     closeDBConn(con)
     return (running, recent, failed)
