@@ -7,12 +7,13 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
 
 <h4>Running</h4>
 <table class="table table-hover table-sm">
-  <thead>
+  <thead style="background-color: #FFEC8B">
     <tr>
       <th scope="col">Started On</th>
       <th scope="col">Workflow</th>
-      <th scope="col">Context</th>
       <th scope="col">User</th>
+      <th scope="col">Project</th>
+      <th scope="col">Context</th>
       <th scope="col">Action</th>
     </tr>
   </thead> 
@@ -21,8 +22,9 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
     <tr>
       <td scope="row">{{ entry[0] }}</td>
       <td>{{ entry[9] }}</td>
-      <td>{{ entry[10] }}</td>
       <td>{{ entry[7] }}</td>
+      <td>{{ entry[19] }}</td>
+      <td>{{ entry[10] }}</td>
       <td><a href="/flow/{{ entry[9] }}/details/{{ entry[5] }}">Details</a></td>
     </tr>
     {% endfor %}
@@ -31,12 +33,13 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
 
 <h4>Last 5 Failed</h4>
 <table class="table table-hover table-sm">
-  <thead>
+  <thead style="background-color: #FFAEB9">
     <tr>
       <th scope="col">Started On</th>
       <th scope="col">Workflow</th>
-      <th scope="col">Context</th>
       <th scope="col">User</th>
+      <th scope="col">Project</th>
+      <th scope="col">Context</th>
       <th scope="col">Action</th>
     </tr>
   </thead> 
@@ -45,8 +48,9 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
     <tr>
       <td scope="row">{{ entry[0] }}</td>
       <td>{{ entry[9] }}</td>
-      <td>{{ entry[10] }}</td>
       <td>{{ entry[7] }}</td>
+      <td>{{ entry[19] }}</td>
+      <td>{{ entry[10] }}</td>
       <td><a href="/flow/{{ entry[9] }}/details/{{ entry[5] }}">Details</a></td>
     </tr>
     {% endfor %}
@@ -55,12 +59,13 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
 
 <h4>Last 5 OK</h4>
 <table class="table table-hover table-sm">
-  <thead>
+  <thead style="background-color: #90EE90">
     <tr>
       <th scope="col">Started On</th>
       <th scope="col">Workflow</th>
-      <th scope="col">Context</th>
       <th scope="col">User</th>
+      <th scope="col">Project</th>
+      <th scope="col">Context</th>
       <th scope="col">Action</th>
     </tr>
   </thead> 
@@ -69,8 +74,9 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
     <tr>
       <td scope="row">{{ entry[0] }}</td>
       <td>{{ entry[9] }}</td>
-      <td>{{ entry[10] }}</td>
       <td>{{ entry[7] }}</td>
+      <td>{{ entry[19] }}</td>
+      <td>{{ entry[10] }}</td>
       <td><a href="/flow/{{ entry[9] }}/details/{{ entry[5] }}">Details</a></td>
     </tr>
     {% endfor %}
