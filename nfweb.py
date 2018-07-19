@@ -7,6 +7,7 @@ import pathlib
 import shlex
 import uuid
 import os
+import subprocess
 import signal
 from collections import deque
 
@@ -428,7 +429,7 @@ def run_details(flow_name : str, run_uuid: int):
     nf_directory = pathlib.Path(data[0][11])
     output_dir = pathlib.Path(data[0][13])
 
-    buttons = { }
+    buttons = { 'output_files': True }
     pid_filename = nf_directory / 'pids' / "{0}.pid".format(run_uuid)
     if pid_filename.is_file():
         buttons['stop'] = True
@@ -446,9 +447,6 @@ def run_details(flow_name : str, run_uuid: int):
     timeline_filename = nf_directory / 'maps' / run_uuid / 'timeline.html'
     if timeline_filename.is_file():
         buttons['timeline'] = True
-    dagdot_filename = nf_directory / 'maps' / run_uuid / 'dag.dot'
-    if dagdot_filename.is_file():
-        buttons['dagdot'] = True
 
     trace_filename = nf_directory / 'traces/{0}.trace'.format(run_uuid)
     if not trace_filename.is_file():
@@ -474,6 +472,25 @@ def show_log(flow_name : str, run_uuid: int):
         content = f.read()
 
     return render_template('show_log.template', content=content, flow_name=flow_name, uuid=run_uuid)
+
+@app.route('/flow/<flow_name>/output_files/<run_uuid>')
+@flask_login.login_required
+def show_output_files(flow_name : str, run_uuid: int):
+    try:
+        data = nflib.getRun(flow_name, run_uuid)
+    except Exception as e:
+        print('Error occured getting run info.')
+        print(e)
+        abort(404)
+
+    # Using root_dir
+    output_dir = data[0][13]
+    tree_cmd = ["tree", output_dir]
+    print(tree_cmd)
+    p = subprocess.run(tree_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    print(p.stdout.strip())
+
+    return render_template('show_log.template', content=p.stdout.strip(), flow_name=flow_name, uuid=run_uuid)
 
 @app.route('/flow/<flow_name>/report/<run_uuid>')
 @flask_login.login_required
