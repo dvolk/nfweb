@@ -137,7 +137,7 @@ def wait_for_cache_dir():
     print("cache dir = {}".format(str(cache_dir)))
 
     # wait until nextflow creates the cache dir
-    tries = 10
+    tries = 180
     while not cache_dir.is_dir():
         print("Waiting for cache dir to be created...")
         time.sleep(1)
