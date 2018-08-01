@@ -64,47 +64,18 @@ def login():
 
         if auth == 'ldap':
             print(cfg.get('ldap'))
-            # Apply Domain to username
-            domain = cfg.get('ldap')['domain']
-            loginUser = "{0}@{1}".format(form_username, domain)
-
-            # Connect to LDAP
-            conn = Connection(cfg.get('ldap')['host'], user=loginUser, password=form_password, read_only=True)
+            conn = Connection(cfg.get('ldap')[0]['host'], user=form_username, password=form_password, read_only=True)
             if conn.bind():
+                print("ldap user {0} logged in".format(form_username))
                 user = User()
+                user.id = form_username
+                flask_login.login_user(user)
                 cap = []
-                if cfg.get('ldap')['admin_group']:
-                    # define search_base using domain info
-                    search_base_string = ""
-                    for element in domain.split('.'):
-                        if len(search_base_string)>1:
-                            search_base_string += ",DC={0}".format(element)
-                        else:
-                            search_base_string += "DC={0}".format(element)
-
-                    # find short login name and AD groups
-                    conn.search(search_base=search_base_string, search_filter='(userPrincipalName='+loginUser+')', attributes=['sAMAccountName','memberOf'])
-                    
-                    for userInfo in conn.entries:
-                        user.id = userInfo['sAMAccountName'][0]
-                        
-                        # Check if user is Admin
-                        for line in userInfo['memberOf']:
-                            for element in line.split(','):
-                                cnStart = element.find("CN=")
-                                if cnStart >= 0:
-                                    if element[cnStart+3:] == cfg.get('ldap')['admin_group']:
-                                        cap = ['admin']
-
-                # Ensure that a valid username was found above
-                try:
-                    flask_login.login_user(user)
-                    users[user.id] = { 'name': user.id, 'capabilities' : cap }
-                    print("ldap user {0} logged in".format(form_username))
-
-                    return redirect('/')
-                except:
-                    print("Could not find user details for user {0}".format(form_username))
+                if form_username in cfg.get('ldap')[0]['admins']:
+                    cap = ['admin']
+                users[user.id] = { 'name': form_username, 'capabilities' : cap }
+                
+                return redirect('/')
             else:
                 print("invalid credentials for ldap user {0}".format(form_username))
         if auth == 'builtin':
