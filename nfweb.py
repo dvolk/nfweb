@@ -259,11 +259,17 @@ def begin_run(flow_name: str):
 
         # get the form user inputs and use them to format the input and output string
         vs = deque([])
+        indir = ""
+        readpat = ""
         inputs = dict()
         for key in sorted(request.form.keys()):
             if key[0:10] == 'nfwebparam':
                 if key[11:16] == 'input':
                     if key[17:21] == 'text':
+                        if key[22:] == 'indir':
+                            indir = request.form[key]
+                        if key[22:] == 'readpat':
+                            readpat = request.form[key]
                         if key[22:] in inputs:
                             inputs[key[22:]][1] = request.form[key]
                         else:
@@ -285,6 +291,8 @@ def begin_run(flow_name: str):
                                 vs.append("{0} {1}".format(param['arg'], request.form[key]))
                             elif param['type'] == 'switch' and request.form[key] == 'True':
                                 vs.append(param['arg'])
+        print(vs)
+
 
 
         for inputKey, inputValues in inputs.items():
@@ -299,8 +307,6 @@ def begin_run(flow_name: str):
                                 vs.appendleft("{0} {1}".format(option['arg'], inputValues[1]))
 
 
-#        if len(vs) < flow_param_cfg['minargs']:
-#        return redirect("/flow/{0}/new".format(flow_name))
         run_uuid = str(uuid.uuid4())
 
         ldap_domain = ''
@@ -333,7 +339,11 @@ def begin_run(flow_name: str):
             # ldap domain or empty string if not domain
             'ldap_domain': ldap_domain,
             # name
-            'output_name': request.form['nfwebparam-output']
+            'output_name': request.form['nfwebparam-output'],
+            # input directory (if it exists or "" otherwise)
+            'indir': indir,
+            # filtering regular expression (if it exists or "" otherwise)
+            'readpat': readpat
         }
 
         try:
@@ -368,6 +378,15 @@ def list_runs(flow_name : str):
         abort(404)
 
     data = nflib.getWorkflow(flow_name)
+    data = [list(datum) for datum in data]
+
+    for datum in data:
+        uuid = datum[14]
+        input_files_count, output_files_count = nflib.get_input_files_count(uuid)
+        datum.append(input_files_count)
+        datum.append(output_files_count)
+
+    #print(data)
     return render_template('list_runs.template', stuff={ 'flow_name': flow_cfg['name'] }, data=data)
 
 @app.route('/flow/<flow_name>/go_details/<uuid>')

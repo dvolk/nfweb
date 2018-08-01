@@ -46,10 +46,12 @@ def getDBConn(pwd : pathlib.Path = pathlib.Path.cwd()):
     pwd = pwd / 'nfweb.sqlite'
     con = sqlite3.connect(str(pwd) ,check_same_thread=False)
     con.execute("CREATE TABLE if not exists nfruns (date_time, duration, code_name, status, hash, uuid, command_line, user, sample_group, workflow, context, root_dir, output_arg, output_dir, run_uuid primary key not null, start_epochtime, pid, ppid, end_epochtime, output_name, data_json);")
+    con.execute("CREATE TABLE if not exists nffiles (uuid primary key not null, input_files_count int, output_files_count int, input_files, output_files)")
     con.commit()
     return con
 
 def closeDBConn(con: sqlite3.Cursor):
+    con.commit()
     con.close()
 
 def getStatus():
@@ -84,6 +86,26 @@ def get_run_uuid_from_internal_uuid(flow_name: str, uuid: int):
     print(data)
     closeDBConn(con)
     return data
+
+def insert_files_table(uuid, input_files_count, input_files):
+    con = getDBConn()
+    con.execute('insert into nffiles values (?,?,?,?,?)', (uuid, input_files_count, -1, input_files, ""))
+    closeDBConn(con)
+
+def update_files_table(uuid, output_files_count, output_files):
+    con = getDBConn()
+    con.execute('update nffiles set output_files_count = ? and output_files = ? where uuid=?', (output_files_count, output_files, uuid))
+    closeDBConn(con)
+
+def get_input_files_count(uuid):
+    con = getDBConn()
+    data = con.execute('select input_files_count, output_files_count from nffiles where uuid = ?', (uuid,)).fetchall()
+    closeDBConn(con)
+    print(data)
+    if not data:
+        return [-1,-1]
+    else:
+        return data[0]
 
 def insertDummyRun(data: dict, db_dir: pathlib.Path = pathlib.Path.cwd()):
     # insert a dummy entry into the table so that the user sees that a run is starting
