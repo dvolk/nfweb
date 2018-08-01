@@ -1,16 +1,15 @@
-system:
-    contexts:
-        - name: Local
-          prog_dirs: '/home/jez/nextflowPipelines/'
-          root_dirs: '/home/jez/nextflowProjects/'
-          output_dirs: '/mnt/linuxData/nextflowOutputs/{user}/nextflowProjects'
-        - name: CSSLURM
-          prog_dirs: '/mnt/slurmscratch/nextflowPipelines/'
-          root_dirs: '/mnt/slurmscratch/nextflowProjects/'
-          output_dirs: '/mnt/microbio/HOMES/ndm.local/{user}/nextflowProjects'
-        - name: Azure
-          prog_dirs: '/datadisks/disk1/cifs/code/'
-          root_dirs: '/datadisks/disk1/nfs/projects/'
+contexts:
+  - name: Local
+    prog_dirs: '/home/jez/nextflowPipelines/'
+    root_dirs: '/home/jez/nextflowProjects/'
+    output_dirs: '/mnt/linuxData/nextflowOutputs/{user}/nextflowProjects'
+  - name: CSSLURM
+    prog_dirs: '/mnt/slurmscratch/nextflowPipelines/'
+    root_dirs: '/mnt/slurmscratch/nextflowProjects/'
+    output_dirs: '/mnt/microbio/HOMES/ndm.local/{user}/nextflowProjects'
+  - name: Azure
+    prog_dirs: '/datadisks/disk1/cifs/code/'
+    root_dirs: '/datadisks/disk1/nfs/projects/'
 
 nextflows:
   - name: "nxtest"

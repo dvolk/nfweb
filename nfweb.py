@@ -101,7 +101,7 @@ def reload_cfg():
     auth = cfg.get('authentication')
     global systemCfg
     systemCfg = dict()
-    for c in cfg.get('system')['contexts']:
+    for c in cfg.get('contexts'):
         systemCfg[c['name']] = c
     global flows
     flows = dict()
