@@ -99,7 +99,7 @@ q = queue.Queue()
 def run_nextflow(queue):
     cmd = "nextflow {0}/{1} -w {2}/SCRATCH -with-trace -with-report -with-timeline -with-dag {3} {4} {5} {6}".format(prog_dir, nf_filename.name, root_dir, arguments, input_str, output_arg, output_dir)
     print("nextflow cmdline: {0}".format(cmd))
-    P = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    P = subprocess.Popen(shlex.split(cmd))
     ppid = os.getpid()
     print("python process pid: {0}".format(ppid))
     proc = psutil.Process(ppid)
@@ -123,14 +123,6 @@ def run_nextflow(queue):
     print("thread waiting for nextflow")
     ret = P.wait()
     print("nextflow process terminated with code {0}".format(ret))
-    print("--- nextflow stdout ---")
-    for line in P.stdout:
-        print(line.strip())
-    print("------")
-    print("--- nextflow stderr ---")
-    for line in P.stderr:
-        print(line.strip())
-    print("------")
     queue.put(ret)
 
 T = threading.Thread(target=run_nextflow, args=(q,))
