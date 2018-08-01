@@ -156,7 +156,7 @@ os.chdir(str(root_dir))
 
 # get the nextflow run uuid. This is different from the nfweb uuid because we need that
 # before nextflow starts
-internal_uuid = (run_dir / '.nextflow' / 'cache').iterdir().__next__().name
+internal_uuid = (run_dir / '.nextflow' / 'cache').iterdir().__next__().name # get the first file in directory
 print("Internal uuid: {0}".format(internal_uuid))
 
 os.makedirs('traces', exist_ok=True)
