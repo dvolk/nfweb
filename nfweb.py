@@ -286,24 +286,24 @@ def begin_run(flow_name: str):
                             elif param['type'] == 'switch' and request.form[key] == 'True':
                                 vs.append(param['arg'])
 
+
         for inputKey, inputValues in inputs.items():
             for inputInfo in flow_param_cfg['description']:
                 if inputInfo['name'] == inputKey:
                     if inputInfo['type'] == 'input-reqr':
                         vs.appendleft("{0} {1}".format(inputInfo['arg'], inputValues[1]))
+
                     else:
                         for option in inputInfo['options']:
                             if option['option'] == inputValues[0]:
                                 vs.appendleft("{0} {1}".format(option['arg'], inputValues[1]))
 
+
 #        if len(vs) < flow_param_cfg['minargs']:
 #        return redirect("/flow/{0}/new".format(flow_name))
         run_uuid = str(uuid.uuid4())
 
-        if cfg.get('authentication') == "ldap":
-            ldap_domain = cfg.get('ldap')['domain']
-        else:
-            ldap_domain = ''
+        ldap_domain = ''
 
         data = {
             # path to nextflow file relative to the prog_dir
