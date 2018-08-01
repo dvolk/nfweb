@@ -63,7 +63,7 @@ run_dir = root_dir / "runs" / uuid
 print(run_dir)
 
 os.makedirs(str(run_dir), exist_ok=True)
-os.makedirs(str(output_dir), exist_ok=True)
+#os.makedirs(str(output_dir), exist_ok=True)
 
 # Cache the current directory and then change into the run directory.
 oldpwd = pathlib.Path.cwd()
@@ -99,7 +99,7 @@ q = queue.Queue()
 def run_nextflow(queue):
     cmd = "nextflow {0}/{1} -w {2}/SCRATCH -with-trace -with-report -with-timeline -with-dag {3} {4} {5} {6}".format(prog_dir, nf_filename.name, root_dir, arguments, input_str, output_arg, output_dir)
     print("nextflow cmdline: {0}".format(cmd))
-    P = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    P = subprocess.Popen(shlex.split(cmd))
     ppid = os.getpid()
     print("python process pid: {0}".format(ppid))
     proc = psutil.Process(ppid)
@@ -123,14 +123,6 @@ def run_nextflow(queue):
     print("thread waiting for nextflow")
     ret = P.wait()
     print("nextflow process terminated with code {0}".format(ret))
-    print("--- nextflow stdout ---")
-    for line in P.stdout:
-        print(line.strip())
-    print("------")
-    print("--- nextflow stderr ---")
-    for line in P.stderr:
-        print(line.strip())
-    print("------")
     queue.put(ret)
 
 T = threading.Thread(target=run_nextflow, args=(q,))
@@ -145,7 +137,7 @@ def wait_for_cache_dir():
     print("cache dir = {}".format(str(cache_dir)))
 
     # wait until nextflow creates the cache dir
-    tries = 10
+    tries = 180
     while not cache_dir.is_dir():
         print("Waiting for cache dir to be created...")
         time.sleep(1)
@@ -164,7 +156,7 @@ os.chdir(str(root_dir))
 
 # get the nextflow run uuid. This is different from the nfweb uuid because we need that
 # before nextflow starts
-internal_uuid = (run_dir / '.nextflow' / 'cache').iterdir().__next__().name
+internal_uuid = (run_dir / '.nextflow' / 'cache').iterdir().__next__().name # get the first file in directory
 print("Internal uuid: {0}".format(internal_uuid))
 
 os.makedirs('traces', exist_ok=True)
@@ -254,31 +246,6 @@ other = (user,
 s = tuple(hist) + other
 end_epochtime = str(int(time.time()))
 nflib.reinsertRun(s, uuid, internal_uuid, oldpwd)
-
-# if using a domain
-# Change ownership of running directory to user when finished
-#
-# for this to work you'll need a line such as
-#
-# denisv@ndm.local ALL=(ALL) NOPASSWD: /bin/chown
-#
-# in your /etc/sudoers file
-if domain:
-    cmd_list = ["id","-g","{0}@{1}".format(user, domain)]
-    print("running '{0}'".format(cmd_list))
-    groupProc = subprocess.run(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-    if groupProc.returncode != 0:
-        print("Error: Couldn't get group for user:")
-        print("Error: {0}".format(groupProc.stderr))
-    
-    group = groupProc.stdout.strip()
-
-    for dir in [run_dir, output_dir]:
-        cmd_string = "sudo chown -R {0}@{1}:{2} {3}".format(user, domain, group, dir)
-        print("running '{0}'".format(cmd_string))
-        ret = os.system(cmd_string)
-        if ret != 0:
-            print("Error: chown returned code {0}".format(ret))
 
 # go back to the old directory
 # not needed?
