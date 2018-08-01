@@ -32,6 +32,7 @@ import shlex
 import json
 import sqlite3
 import psutil
+import glob
 
 import nflib
 
@@ -57,6 +58,36 @@ workflow = data['workflow']
 context = data['context']
 domain = data['ldap_domain']
 output_name = data['output_name']
+indir = data['indir']
+readpat = data['readpat']
+
+def count_files():
+    # try to find the number of input files based on the existence of 
+    # parameters indir and readpat
+    if indir:
+        if readpat:
+            # directory + regex
+            pat = indir + readpat
+        else:
+            # directory only
+            pat = indir
+        files = glob.glob(pat)
+        files_count = len(files)
+    else:
+        # single file or unknown/incompatible
+        # TODO get file name
+        pat = ""
+        files = ""
+        files_count = 1
+
+    return pat, files, files_count
+
+pat, files, files_count = count_files()
+
+print("File pattern: {0}".format(pat))
+print("Files counted: {0}".format(files_count))
+
+nflib.insert_files_table(uuid, files_count, json.dumps(files))
 
 # Create the run dir
 run_dir = root_dir / "runs" / uuid
