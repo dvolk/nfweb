@@ -57,6 +57,8 @@ workflow = data['workflow']
 context = data['context']
 domain = data['ldap_domain']
 output_name = data['output_name']
+ldap_short_username = data['ldap_short_username']
+user_output_permissions = data['user_output_permissions']
 
 # Create the run dir
 run_dir = root_dir / "runs" / uuid
@@ -104,7 +106,7 @@ def run_nextflow(queue):
     print("python process pid: {0}".format(ppid))
     proc = psutil.Process(ppid)
 
-    # wait until nextflow starts 
+    # wait until nextflow starts
     while not proc.children():
         print("waiting for nextflow to start...")
         time.sleep(0.1)
@@ -246,6 +248,32 @@ other = (user,
 s = tuple(hist) + other
 end_epochtime = str(int(time.time()))
 nflib.reinsertRun(s, uuid, internal_uuid, oldpwd)
+
+# if using a domain and user_output_permissions is set on it
+#
+# Change ownership of running directory to user when finished
+#
+# for this to work you'll need a line such as
+#
+# denisv@ndm.local ALL=(ALL) NOPASSWD: /bin/chown
+#
+# in your /etc/sudoers file
+if user_output_permissions:
+    cmd_list = ["id","-g","{0}".format(user)]
+    print("running '{0}'".format(cmd_list))
+    groupProc = subprocess.run(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    if groupProc.returncode != 0:
+        print("Error: Couldn't get group for user:")
+        print("Error: {0}".format(groupProc.stderr))
+
+    group = groupProc.stdout.strip()
+
+    for dir in [run_dir, output_dir]:
+        cmd_string = "sudo chown -R {0}:{1} {2}".format(user, group, dir)
+        print("running '{0}'".format(cmd_string))
+        ret = os.system(cmd_string)
+        if ret != 0:
+            print("Error: chown returned code {0}".format(ret))
 
 # go back to the old directory
 # not needed?

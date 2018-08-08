@@ -70,10 +70,19 @@ def login():
                 user = User()
                 user.id = form_username
                 flask_login.login_user(user)
+
                 cap = []
                 if form_username in cfg.get('ldap')[0]['admins']:
                     cap = ['admin']
-                users[user.id] = { 'name': form_username, 'capabilities' : cap }
+
+                short_username, domain = form_username.split('@')
+
+                users[user.id] = {
+                    'name': form_username,
+                    'capabilities' : cap,
+                    'short_username': short_username,
+                    'domain': domain
+                }
                 
                 return redirect('/')
             else:
@@ -111,6 +120,11 @@ def reload_cfg():
     users = dict()
     for u in cfg.get('users'):
         users[u['name']] = u
+    global ldap
+    ldap = dict()
+    for l in cfg.get('ldap'):
+        ldap[l['name']] = l
+    print(ldap)
 
 reload_cfg()
 
@@ -200,29 +214,30 @@ def begin_run(flow_name: str):
         flow_param_cfg = flow_cfg['param']
 
         run_context_dict = dict()
-        try:
-            for c in flow_cfg['contexts']:
-                run_context_dict[c['name']] = c 
+        current_user = users[flask_login.current_user.id]
+        ldap_short_username = current_user['short_username']
+        ldap_domain = current_user['domain']
+        print(ldap[ldap_domain])
+        user_output_permissions = ldap[ldap_domain]['user_output_permissions']
 
-                # Append directories to context root if present
-                if 'root_dirs' in systemCfg[c['name']]:
-                    run_context_dict[c['name']]['root_dir'] = pathlib.Path(systemCfg[c['name']]['root_dirs']) / flow_cfg['root_dir']
-                else:
-                    raise Exception("No 'root_dirs' in config.")
+        for c in flow_cfg['contexts']:
+            run_context_dict[c['name']] = c 
 
-                if 'prog_dirs' in systemCfg[c['name']]:
-                    run_context_dict[c['name']]['prog_dir'] = pathlib.Path(systemCfg[c['name']]['prog_dirs']) / flow_cfg['prog_dir']
-                else:
-                    raise Exception("No 'prog_dirs' in config.")
+            # Append directories to context root if present
+            if 'root_dirs' in systemCfg[c['name']]:
+                run_context_dict[c['name']]['root_dir'] = pathlib.Path(systemCfg[c['name']]['root_dirs']) / flow_cfg['root_dir']
+            else:
+                raise Exception("No 'root_dirs' in config.")
 
-                if 'output_dirs' in systemCfg[c['name']]:
-                    run_context_dict[c['name']]['output_dir'] = pathlib.Path(systemCfg[c['name']]['output_dirs'].format(user = flask_login.current_user.id)) / flow_cfg['root_dir']
-                else:
-                    run_context_dict[c['name']]['output_dir'] = pathlib.Path(run_context_dict[c['name']]['root_dir']) / 'output' / flask_login.current_user.id
+            if 'prog_dirs' in systemCfg[c['name']]:
+                run_context_dict[c['name']]['prog_dir'] = pathlib.Path(systemCfg[c['name']]['prog_dirs']) / flow_cfg['prog_dir']
+            else:
+                raise Exception("No 'prog_dirs' in config.")
 
-        except Exception as e:
-            print(e)
-            abort(404)
+            if 'output_dirs' in systemCfg[c['name']]:
+                run_context_dict[c['name']]['output_dir'] = pathlib.Path(systemCfg[c['name']]['output_dirs'].format(user = flask_login.current_user.id, ldap_short_username = ldap_short_username, ldap_domain = ldap_domain)) / flow_cfg['root_dir']
+            else:
+                run_context_dict[c['name']]['output_dir'] = pathlib.Path(run_context_dict[c['name']]['root_dir']) / 'output' / flask_login.current_user.id
 
         return render_template('begin_run.template', flow=flow_cfg, paramcfg=flow_param_cfg, contextcfg=run_context_dict)
 
@@ -232,30 +247,30 @@ def begin_run(flow_name: str):
         flow_output_cfg = flow_cfg['output']
         context = request.form['context']
 
+        current_user = users[flask_login.current_user.id]
+        ldap_short_username = current_user['short_username']
+        ldap_domain = current_user['domain']
+        user_output_permissions = ldap[ldap_domain]['user_output_permissions']
+
         run_context_dict = dict()
         for c in flow_cfg['contexts']:
             run_context_dict[c['name']] = c
 
-        try:
-            # TODO Generate in same method as GET method
-            if 'root_dirs' in systemCfg[context]:
-                root_dir = pathlib.Path(systemCfg[context]['root_dirs']) /  flow_cfg['root_dir'] / flask_login.current_user.id
-            else:
-                raise Exception("No 'root_dirs' in config.")
+        # TODO Generate in same method as GET method
+        if 'root_dirs' in systemCfg[context]:
+            root_dir = pathlib.Path(systemCfg[context]['root_dirs']) /  flow_cfg['root_dir'] / flask_login.current_user.id
+        else:
+            raise Exception("No 'root_dirs' in config.")
 
-            if 'prog_dirs' in systemCfg[context]:
-                prog_dir = pathlib.Path(systemCfg[context]['prog_dirs']) / flow_cfg['prog_dir']
-            else:
-                raise Exception("No 'prog_dirs' in config.")
+        if 'prog_dirs' in systemCfg[context]:
+            prog_dir = pathlib.Path(systemCfg[context]['prog_dirs']) / flow_cfg['prog_dir']
+        else:
+            raise Exception("No 'prog_dirs' in config.")
 
-            if 'output_dirs' in systemCfg[context]:
-                output_dir = pathlib.Path(systemCfg[context]['output_dirs'].format(user = flask_login.current_user.id)) / flow_cfg['root_dir']
-            else:
-                output_dir = root_dir / 'output' / flask_login.current_user.id
-
-        except Exception as e:
-            print(e)
-            abort(404)
+        if 'output_dirs' in systemCfg[context]:
+            output_dir = pathlib.Path(systemCfg[context]['output_dirs'].format(user = flask_login.current_user.id, ldap_short_username = ldap_short_username, ldap_domain = ldap_domain)) / flow_cfg['root_dir']
+        else:
+            output_dir = root_dir / 'output' / flask_login.current_user.id
 
         # get the form user inputs and use them to format the input and output string
         vs = deque([])
@@ -299,11 +314,17 @@ def begin_run(flow_name: str):
                                 vs.appendleft("{0} {1}".format(option['arg'], inputValues[1]))
 
 
-#        if len(vs) < flow_param_cfg['minargs']:
-#        return redirect("/flow/{0}/new".format(flow_name))
         run_uuid = str(uuid.uuid4())
 
-        ldap_domain = ''
+        if auth == 'ldap':
+            current_user = users[flask_login.current_user.id]
+            ldap_short_username = current_user['short_username']
+            ldap_domain = current_user['domain']
+            user_output_permissions = ldap[ldap_domain]['user_output_permissions']
+        else:
+            ldap_short_username = ''
+            ldap_domain = ''
+            user_output_permissions = ''
 
         data = {
             # path to nextflow file relative to the prog_dir
@@ -333,7 +354,11 @@ def begin_run(flow_name: str):
             # ldap domain or empty string if not domain
             'ldap_domain': ldap_domain,
             # name
-            'output_name': request.form['nfwebparam-output']
+            'output_name': request.form['nfwebparam-output'],
+            # user's short (no domain) username if using ldap otherwise empty string
+            'ldap_short_username': ldap_short_username,
+            # change the output permissions/ownership to the ldap user
+            'user_output_permissions': user_output_permissions
         }
 
         try:
