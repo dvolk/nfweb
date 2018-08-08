@@ -466,21 +466,39 @@ def show_log(flow_name : str, run_uuid: int):
 @app.route('/flow/<flow_name>/output_files/<run_uuid>')
 @flask_login.login_required
 def show_output_files(flow_name : str, run_uuid: int):
-    try:
-        data = nflib.getRun(flow_name, run_uuid)
-    except Exception as e:
+    # run du and tree to display total file size and file tree of output directory
+    data = nflib.getRun(flow_name, run_uuid)
+    if not data:
         print('Error occured getting run info.')
-        print(e)
         abort(404)
 
     # Using root_dir
     output_dir = data[0][13]
-    tree_cmd = ["tree", output_dir]
-    print(tree_cmd)
-    p = subprocess.run(tree_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-    print(p.stdout.strip())
 
-    return render_template('show_log.template', content=p.stdout.strip(), flow_name=flow_name, uuid=run_uuid)
+    du_cmd = ["du", "-sh", output_dir]
+    tree_cmd = ["tree", output_dir]
+    print(du_cmd)
+    print(tree_cmd)
+
+    try:
+        du_p = subprocess.run(du_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    except:
+        print("Failed to run du: {0}".format(du_p.stderr))
+        abort(404)
+    try:
+        tree_p = subprocess.run(tree_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    except:
+        print("Failed to run tree: {0}".format(tree_p.stderr))
+        abort(404)
+
+    # Format directory on top, then total size, then the file tree
+    size_str = du_p.stdout.strip()
+    size_str = size_str.split("\t")
+    size_str = "Total size: {0}".format(size_str[0])
+    out_str = tree_p.stdout.strip().split('\n')
+    out_str = "\n".join([out_str[0]] + [out_str[-1]] + [size_str] + [""] + out_str[1:-1])
+
+    return render_template('show_log.template', content=out_str, flow_name=flow_name, uuid=run_uuid)
 
 @app.route('/flow/<flow_name>/report/<run_uuid>')
 @flask_login.login_required
