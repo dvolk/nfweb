@@ -35,6 +35,7 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
       <th scope="col">Project</th>
       <th scope="col">Context</th>
       <th scope="col">Duration</th>
+      <th scope="col">Samples</th>
       <th scope="col">Status</th>
       <th scope="col">Action</th>
     </tr>
@@ -47,6 +48,7 @@ CREATE TABLE nfruns (date_time, duration, code_name, status, hash, uuid, command
       <td>{{ entry[19] }}</td>
       <td>{{ entry[10] }}</td>
       <td>{{ entry[1] }}</td>
+      <td>{% if entry[21] == -1 %}{% else %}{{ entry[21] }}{% endif %}</td>
       <td>
 	<span href="#" style="padding: 3px; background-color: {% if entry[3] == "ERR" or entry[3] == "FAIL" %}#FF6347{% elif entry[3] == "OK" %}#F0F8FF{% else %}#00BFFF{% endif %}">
 	  {% if entry[3] == "-" %}
