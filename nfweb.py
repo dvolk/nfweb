@@ -366,7 +366,7 @@ def begin_run(flow_name: str):
             # user's short (no domain) username if using ldap otherwise empty string
             'ldap_short_username': ldap_short_username,
             # change the output permissions/ownership to the ldap user
-            'user_output_permissions': user_output_permissions
+            'user_output_permissions': user_output_permissions,
             # input directory (if it exists or "" otherwise)
             'indir': indir,
             # filtering regular expression (if it exists or "" otherwise)
