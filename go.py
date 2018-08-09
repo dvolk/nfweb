@@ -96,7 +96,7 @@ run_dir = root_dir / "runs" / uuid
 print(run_dir)
 
 os.makedirs(str(run_dir), exist_ok=True)
-#os.makedirs(str(output_dir), exist_ok=True)
+os.makedirs(str(output_dir.parent), exist_ok=True)
 
 # Cache the current directory and then change into the run directory.
 oldpwd = pathlib.Path.cwd()
